@@ -7,6 +7,7 @@ content slides, references).
 |---|---|
 | `slides.pdf` | The deck as handed in: 8 pages, every step shown |
 | `slides.html` | The same deck to present from: one self-contained file, opens in any browser, with click-through steps and the speaker notes |
+| `slides.pptx` | The same deck as a PowerPoint file, fully editable (text boxes, a native chart on slide 3, shapes for the interval chart on slide 6), with every speaker note in the notes pane. No click-through steps: each slide shows everything |
 
 ## Required structure, and where each part is
 
@@ -24,6 +25,10 @@ content slides, references).
 Total: about 12 minutes. The numbers on the slides are the ones in
 `report/REPORT.md`, and the tests recompute each of them from the committed
 run files.
+
+## Which file to edit
+
+The three files are separate copies of the same deck: a change in one does not reach the others. `slides.pdf` is exported from `slides.html` (command below). `slides.pptx` was rebuilt from `slides.html` with the same text, numbers and notes; if you change the deck in PowerPoint, export a new PDF from PowerPoint (File → Export → PDF) so the handed-in PDF matches.
 
 ## Presenting from the HTML
 
