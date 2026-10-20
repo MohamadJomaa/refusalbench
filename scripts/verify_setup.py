@@ -86,8 +86,9 @@ def check_pytest():
         [sys.executable, "-m", "pytest", "-q"], capture_output=True, text=True
     )
     ok = completed.returncode == 0
-    tail = completed.stdout.strip().splitlines()[-1] if completed.stdout.strip() else "no output"
-    return ok, tail
+    lines = (completed.stdout + completed.stderr).strip().splitlines()
+    tail = lines[-1] if lines else "no output"
+    return ok, tail if ok else f"{tail} (run `python -m pytest -q` to see the whole error)"
 
 
 # ------------------------------------------------------------ project checks
@@ -187,7 +188,8 @@ def check_judge_online():
     if not key:
         return False, "no GOOGLE_API_KEY or GEMINI_API_KEY set"
     model = yaml.safe_load((ROOT / "baseline" / "configs" / "qwen15_7b_baseline.yaml").read_text())["judge"]["model"]
-    text = genai.Client(api_key=key).models.generate_content(model=model, contents="Reply with the word OK").text
+    client = genai.Client(api_key=key)  # keep a reference: a client nobody holds is closed mid-call
+    text = client.models.generate_content(model=model, contents="Reply with the word OK").text
     return True, f"{model} replied {(text or '').strip()[:20]!r}"
 
 

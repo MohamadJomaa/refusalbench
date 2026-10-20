@@ -72,6 +72,8 @@ def main():
     ap.add_argument("--subset-file", default=None, help="JSON with an ids list, e.g. data/novelty_sample_ids.json")
     args = ap.parse_args()
 
+    if not os.path.isabs(args.config) and not os.path.exists(args.config):
+        args.config = os.path.join(REPO_ROOT, args.config)  # works from any folder, not only the repository root
     cfg = yaml.safe_load(open(args.config, encoding="utf-8"))
     if args.fake:
         cfg = copy.deepcopy(cfg)
