@@ -87,6 +87,25 @@ See `CONTRIBUTING.md`: one branch and one pull request per person, every pull
 request approved by a teammate, every commit under its author's own account.
 The four milestones are the four issue templates under **Issues → New issue**.
 
+## Use of AI tools
+
+We used AI assistants in this project, and state here how.
+
+- **Claude (Anthropic)** helped write and restructure code (the evaluation
+  pipeline, the Colab notebooks, the analysis scripts and the tests), the
+  READMEs, `report/REPORT.md` and the defense slides. The commits authored "Claude" in
+  this repository were made this way from our GitHub account. Each one reached
+  `main` through a pull request that we merged.
+- **ChatGPT (OpenAI)** reviewed earlier drafts of our paper-style write-up; we
+  decided which of its comments to apply.
+- **What we did ourselves:** we chose the paper and the topic, decided which
+  extension ideas to pursue, ran every experiment on Google Colab with our own
+  accounts and keys, checked the results against the paper and the data, and
+  we take responsibility for every claim in the report and the slides.
+- **No AI tool produced or edited a result.** The only exception is the Gemini
+  judge, which is part of the method (report Section 2.3). Every number comes from the
+  runs committed in this repository, and the tests in `tests/` recompute it.
+
 ## Acknowledgements and links
 
 - Paper: Muhamed et al., *RefusalBench: Generative Evaluation of Selective
