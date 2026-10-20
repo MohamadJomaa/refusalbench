@@ -3,7 +3,7 @@
 Team project for **Data Science for Conversational AI** (MSc, Lebanese University).
 Topic: **Grounding**. Baseline paper: **RefusalBench** (Muhamed et al., EACL 2026).
 
-**Team:** Mohammad Jomaa (`@<github-handle>`)
+**Team:** Mohammad Jomaa (`@<github-handle>`), Abbass Zahreddine (`@<github-handle>`), Ahmad Assaf (`@<github-handle>`)
 
 ## The project, in one paragraph
 
