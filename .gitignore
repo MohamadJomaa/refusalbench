@@ -18,6 +18,12 @@ data/*
 *.db
 *.sqlite3
 
+# Run outputs written by the scripts. The results we report are committed
+# as zips inside baseline/results and extension/*/results instead.
+runs/
+**/results/qwen15_7b_*/
+.ipynb_checkpoints/
+
 # OS and editor
 .DS_Store
 .vscode/

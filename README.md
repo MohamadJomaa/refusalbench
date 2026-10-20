@@ -1,107 +1,100 @@
-# DSCAI team project template
+# Reading, Not Asking: selective refusal in a small grounded model
 
-Starter repository for the paper-extension project in **Data Science for
-Conversational AI**. Not a lecture repository. This is where one team
-reproduces a real paper's baseline, then builds and evaluates its own
-novel extension of it, from day one of the course through the Module 6
-defense.
+Team project for **Data Science for Conversational AI** (MSc, Lebanese University).
+Topic: **Grounding**. Baseline paper: **RefusalBench** (Muhamed et al., EACL 2026).
+
+**Team:** Mohammad Jomaa (`@<github-handle>`)
 
 ## The project, in one paragraph
 
-Pick one topic (extraction, dialogue, grounding, memory, or evaluation,
-one per module) and one paper inside it, either from the course's own
-curated paper-and-repo menu or proposed by your team. Reproduce that
-paper's baseline. Then design, implement, and evaluate one novel,
-useful extension of it, defended in Module 6 alongside two teammates who
-can each answer questions about any part: the paper, the extension, or
-the code. Full details, the compute and cost cap, and the rubric are in
-the course syllabus and in `PROJECT-REDESIGN.md` in the course repository.
+RefusalBench tests whether a grounded language model answers when the given
+passage supports an answer, and refuses, naming the right reason, when the
+passage is flawed (six reasons: ambiguity, contradiction, missing information,
+false premise, granularity mismatch, epistemic mismatch). We **reproduce** the
+paper's evaluation for a small open model, **Qwen1.5-7B-Chat**, on the released
+RefusalBench-NQ set (1,600 examples) on a free Google Colab T4, with a Gemini
+judge in place of the paper's Claude judge. We then test **two extensions**:
 
-## Setup, one team, once
+1. **Diagnose first** (`extension/ext1_diagnose_first/`): ask the model to state
+   what is wrong with the evidence before it answers. A clear negative result:
+   the model wrote "CLEAR" on 762 of 800 examples.
+2. **Read the model's signal** (`extension/ext2_reading_signals/`): with one
+   forward pass and no generated text, read the probability of a refusal code,
+   a yes/no sufficiency probability, and a linear probe on the hidden state,
+   and turn each into an answer-or-refuse decision. The signal is clearly above
+   chance (AUROC 0.73 to 0.80), but a better decision than the baseline is
+   **not** established (probe +0.028 balanced accuracy, 95% interval
+   [-0.014, +0.065]).
 
-Do this as soon as your team has picked a topic and a paper, on whatever
-connection you have, at home or wherever is reliable.
-
-1. Click **Use this template** at the top of this repo on GitHub (not
-   fork, not clone), and create your own repository, for example
-   `team-alpha-gorilla-extension`. Clone it locally.
-2. Add your instructor as a collaborator on your new repository, so it
-   can be reviewed and graded.
-3. Turn on branch protection for `main` in your new repo's settings:
-   require a pull request before merging, require at least one approval.
-   This is a per-repo setting and does not carry over from this template,
-   so do it now, before real work starts.
-4. Copy `.env.example` to `.env` and fill in whichever API key(s) your
-   chosen paper's own baseline actually needs. This course's own lectures
-   default to Gemini (free tier, no card required, get a key at
-   [aistudio.google.com/apikey](https://aistudio.google.com/apikey)), but
-   your baseline repo may expect OpenAI, Anthropic, or something else
-   entirely. Check its own README before assuming. Confirm `.env` stays
-   in `.gitignore` (it already is, keep it that way, never commit a real
-   key).
-5. `pip install -r requirements.txt` for the small set of tools every
-   team needs (pytest, python-dotenv), then add whatever your chosen
-   baseline repo's own `requirements.txt` or setup instructions call for
-   on top of that. This template does not guess your stack for you: a
-   memory paper's dependencies look nothing like an evaluation-harness
-   paper's.
-6. Run `python scripts/verify_setup.py`. It checks the things every
-   team needs regardless of topic (`.env` loads, at least one API key is
-   set, `pytest` passes) and nothing baseline-specific, since that varies
-   by paper. Fix anything it reports as FAIL before your first working
-   session.
-
-## What is in here
+## Where everything is
 
 ```
-baseline/
-  README.md            Where your reproduction of the chosen paper's
-                        baseline goes, cloned, vendored, or reimplemented
-extension/
-  README.md            Where your own novel idea's code goes, kept
-                        clearly separate from the baseline it extends
-report/
-  REPORT.md            The paper-style report template, due before
-                        Module 6
-slides/
-  README.md            What the six-content-slide deck must cover, and
-                        where to build it
-data/
-  README.md            Where your own seed, scripted, or benchmark data
-                        goes
-tests/
-  test_smoke.py         Confirms the expected folders exist; add real
-                        tests as you build
-.github/
-  ISSUE_TEMPLATE/       idea-pitch, baseline-reproduction, extension, and
-                        report-and-slides, one per real milestone
-  PULL_REQUEST_TEMPLATE.md
-CONTRIBUTING.md         The branch, PR and review workflow. Read this
-                        before your first working session.
+baseline/     Our reproduction of the RefusalBench evaluation (paper's prompt and
+              judge prompt verbatim), configs, Colab notebook, results
+extension/    Our own work, kept apart from the baseline:
+  ext1_diagnose_first/    Extension 1: evidence-state prompt + format-only control
+  ext2_reading_signals/   Extension 2: refusal probability, yes/no, hidden-state probe
+data/         Where the data comes from, and the fixed sample ID files
+report/       REPORT.md, the paper-style report
+slides/       The defense deck (cover, 6 content slides, references)
+tests/        pytest tests: run without a GPU, an API key or a network
+scripts/      verify_setup.py, the setup check
 ```
 
-`baseline/README.md` and `extension/README.md` are stubs: each explains
-what belongs there and what "done" looks like, no working code. That is
-your team's job, not the template's.
+## Status
 
-## The four issues
+| Part | State |
+|---|---|
+| Baseline | 1,560 of 1,600 replies generated (40 out-of-memory failures, 2.5%); **770 graded** (a seeded random sample), the rest limited by the free judge quota |
+| Extension 1 | Done, negative result, on a stratified 800 |
+| Extension 2 | Done on all 1,600; compared with the baseline on the 770 graded examples |
+| Report and slides | See `report/` and `slides/` |
 
-Open **Issues → New issue** and work through the four templates in order:
-idea pitch (approved before real work starts), baseline reproduction,
-extension, then report and slides. Each already has the acceptance
-criteria the syllabus sets. See `CONTRIBUTING.md` for how to assign,
-split, and link work to each one.
+Every result is a **smoke test** in the course's sense: what a full run would
+need is stated in `baseline/README.md`, `extension/README.md` and Section 5 of
+the report.
 
-## How this maps to the course
+## Setup
 
-There is no separate practice project and then a real one. This
-repository, the one you create from this template, is the same thing
-from your team's first working session to the Module 6 defense. Module 6
-is a live defense of whatever state this repository, your report, and
-your slides are in by then, not a fresh demo built for the day.
+1. Clone the repository and create a Python 3.10+ environment.
+2. `pip install -r requirements.txt`
+3. Copy `.env.example` to `.env` and set `GOOGLE_API_KEY` (free key from
+   [aistudio.google.com/apikey](https://aistudio.google.com/apikey)). It is
+   needed only for judging; generation and the tests do not use it.
+4. `python scripts/verify_setup.py` and fix every FAIL.
+
+**Where it runs.** The tests and the `--fake` end-to-end runs work on any
+laptop CPU. The real runs need a GPU with about 6 GB of free memory for
+Qwen1.5-7B-Chat in 4-bit: we used the free Google Colab T4 through the
+notebooks in `baseline/` and `extension/`. Total API cost: **$0** (free Gemini
+tier), inside the course's $20 limit.
+
+## Documented deviations from the paper
+
+| | Paper | Ours |
+|---|---|---|
+| Hardware | 4 × A100 80 GB, vLLM | 1 × Colab T4, Hugging Face transformers |
+| Precision | not stated (likely 16-bit) | 4-bit (bitsandbytes) |
+| Judge | Claude-4-Sonnet | `gemini-3.5-flash-lite`, used only for replies without one clean refusal code |
+| Sampling | temperature 1.0, top_p 1.0 | same |
+| Prompt and judge prompt | original repository | copied verbatim |
+
+## Team workflow
+
+See `CONTRIBUTING.md`: one branch and one pull request per person, every pull
+request approved by a teammate, every commit under its author's own account.
+The four milestones are the four issue templates under **Issues → New issue**.
+
+## Acknowledgements and links
+
+- Paper: Muhamed et al., *RefusalBench: Generative Evaluation of Selective
+  Refusal in Grounded Language Models*, EACL 2026, arXiv:2510.10390.
+- Original code: [github.com/aashiqmuhamed/refusalbench](https://github.com/aashiqmuhamed/refusalbench)
+- Our earlier working repository (history of the runs):
+  [github.com/aidepartmentrah-pixel/refusalbench-reproduction](https://github.com/aidepartmentrah-pixel/refusalbench-reproduction)
+- Course template: [github.com/ahmabboud/dsca-team-template](https://github.com/ahmabboud/dsca-team-template)
 
 ## Data
 
-No personal data, no client data, no real users' information. Use public
-datasets, synthesized examples, or data you generate yourselves. See
-`data/README.md`.
+No personal data. RefusalBench-NQ is built from Natural Questions and KILT
+(Apache 2.0). See `data/README.md`.
