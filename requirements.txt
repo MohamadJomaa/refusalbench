@@ -2,11 +2,22 @@
 python-dotenv>=1.0
 pytest>=8.0
 
-# Everything else depends on which paper your team is extending, and
-# belongs here once you know it, not guessed in advance by this template.
-# Add your chosen baseline repo's own dependencies below this line, or
-# pull them in however that repo's own setup instructions say to
-# (a separate requirements file, a pyproject extra, a conda environment).
-# Two examples of what teams have added past this line in prior terms:
-#   google-genai>=2.3.0   # Gemini access, this course's own lecture default
-#   mem0ai>=0.1           # a Memory-topic team building on Mem0
+# Baseline: data, target model, judge, configs.
+datasets>=2.19          # loads RefusalBench-NQ from the Hugging Face Hub
+pyyaml>=6.0             # run configs in baseline/configs and extension/*/configs
+google-genai>=1.0       # Gemini judge
+numpy>=1.24
+
+# Target model (Qwen1.5-7B-Chat in 4-bit). Needed only for real runs on a GPU;
+# the tests and the --fake runs do not import them.
+torch>=2.1
+transformers>=4.40
+accelerate>=0.30
+bitsandbytes>=0.43      # 4-bit quantization, needs a CUDA GPU (Colab T4)
+
+# Extensions: paired bootstrap, probe, AUROC, figures.
+scikit-learn>=1.3
+scipy>=1.10
+matplotlib>=3.7
+
+# Exact versions used in each run are recorded in that run's own report.
