@@ -1,0 +1,4 @@
+group,n_scored,n_answerable,n_unanswerable,answer_accuracy,refusal_accuracy,false_refusal_rate,missed_refusal_rate,refusal_detection_f1,calibrated_refusal_score
+HIGH,253,0,253,,0.1265,,0.3953,0.7506,
+LOW,261,261,0,0.6897,,0.1648,,,
+MEDIUM,256,0,256,,0.1016,,0.5156,0.6491,
