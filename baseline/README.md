@@ -39,7 +39,7 @@ configs/qwen15_7b_baseline.yaml   model, precision, sampling, judge, stages
 scripts/
   run_all.py                ONE command: generate (10, 100, all) -> judge -> metrics -> report
   run_smoke_test.py         dry run: prints the exact prompt for a 20-example sample, no model, no API
-  test_judge.py             4 hand-made judge cases, checks the judge behaves sensibly
+  judge_live_check.py       4 hand-made judge cases sent to the real Gemini judge (uses the API)
   check_gemini.py, probe_gemini.py   which Gemini models this key can use
   score_handcheck.py        agreement rate after a person fills in handcheck_sheet.csv
 notebooks/

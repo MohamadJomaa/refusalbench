@@ -2,3 +2,6 @@
 # Makes imports resolve from the repository root regardless of how pytest
 # is invoked (bare "pytest", "python -m pytest", or from an IDE).
 pythonpath = ["."]
+# Only tests/ holds tests. The scripts in baseline/ and extension/ can call
+# the GPU or the Gemini API and must never be collected by a bare "pytest".
+testpaths = ["tests"]

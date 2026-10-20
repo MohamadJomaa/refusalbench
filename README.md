@@ -61,7 +61,9 @@ the report.
 3. Copy `.env.example` to `.env` and set `GOOGLE_API_KEY` (free key from
    [aistudio.google.com/apikey](https://aistudio.google.com/apikey)). It is
    needed only for judging; generation and the tests do not use it.
-4. `python scripts/verify_setup.py` and fix every FAIL.
+4. `python scripts/verify_setup.py` and fix every FAIL. Add `--online` to also
+   download the dataset and make one judge call.
+5. `pytest -q`: 33 tests, offline, no GPU and no API key needed.
 
 **Where it runs.** The tests and the `--fake` end-to-end runs work on any
 laptop CPU. The real runs need a GPU with about 6 GB of free memory for

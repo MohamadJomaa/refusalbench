@@ -1,6 +1,6 @@
 """Tiny judge sanity test: 4 hand-made cases against a Gemini model. Free-tier, a handful of calls.
 
-Usage: python scripts/test_judge.py [model]
+Usage, from the repository root: python baseline/scripts/judge_live_check.py [model]
 """
 
 import os
