@@ -1,0 +1,76 @@
+2026-10-05T13:21:18  === Novelty 2: confidence-threshold refusal gate | run folder: /content/drive/MyDrive/refusalbench-results/novelty2_confidence_threshold
+2026-10-05T13:21:24  1600 examples, 536 answerable, 100 source questions
+2026-10-05T13:21:24  loading Qwen/Qwen1.5-7B-Chat (4bit) ...
+2026-10-05T13:21:28  GPU memory in use before loading the model: 104 MiB of 14912 MiB
+2026-10-05T13:32:14    S1 variant ''           -> tokens ['REF', 'USE']
+2026-10-05T13:32:15    S1 variant '**'         -> tokens ['**', 'REF', 'USE']
+2026-10-05T13:32:15    S1 variant '`'          -> tokens ['`', 'REF', 'USE']
+2026-10-05T13:32:15    S1 variant 'ANSWER: '   -> tokens ['ANS', 'WER', ':', 'ĠREF', 'USE']
+2026-10-05T13:32:15    S1 variant 'Answer: '   -> tokens ['Answer', ':', 'ĠREF', 'USE']
+2026-10-05T13:32:15    S2 Yes ids ['Yes', 'yes', 'YES'], No ids ['no', 'No', 'NO']
+2026-10-05T13:33:04    pre-flight: cached vs full re-forward variant log-probs differ by at most 0.187
+2026-10-05T13:33:04  --- s1: 1600 examples, 1600 still to score
+2026-10-05T13:36:16    s1: 64/1600 this call (2.99s per example, about 77 min left)
+2026-10-05T13:39:26    s1: 128/1600 this call (2.98s per example, about 73 min left)
+2026-10-05T13:42:21    s1: 192/1600 this call (2.90s per example, about 68 min left)
+2026-10-05T13:44:30    s1: 256/1600 this call (2.68s per example, about 60 min left)
+2026-10-05T13:46:04    s1: 320/1600 this call (2.44s per example, about 52 min left)
+2026-10-05T13:47:34    s1: 384/1600 this call (2.26s per example, about 46 min left)
+2026-10-05T13:49:04    s1: 448/1600 this call (2.14s per example, about 41 min left)
+2026-10-05T13:50:34    s1: 512/1600 this call (2.05s per example, about 37 min left)
+2026-10-05T13:52:02    s1: 576/1600 this call (1.98s per example, about 34 min left)
+2026-10-05T13:53:29    s1: 640/1600 this call (1.91s per example, about 31 min left)
+2026-10-05T13:54:53    s1: 704/1600 this call (1.86s per example, about 28 min left)
+2026-10-05T13:56:18    s1: 768/1600 this call (1.81s per example, about 25 min left)
+2026-10-05T13:57:42    s1: 832/1600 this call (1.78s per example, about 23 min left)
+2026-10-05T13:59:04    s1: 896/1600 this call (1.74s per example, about 20 min left)
+2026-10-05T14:00:27    s1: 960/1600 this call (1.71s per example, about 18 min left)
+2026-10-05T14:01:49    s1: 1024/1600 this call (1.68s per example, about 16 min left)
+2026-10-05T14:03:10    s1: 1088/1600 this call (1.66s per example, about 14 min left)
+2026-10-05T14:04:32    s1: 1152/1600 this call (1.64s per example, about 12 min left)
+2026-10-05T14:05:52    s1: 1216/1600 this call (1.62s per example, about 10 min left)
+2026-10-05T14:07:13    s1: 1280/1600 this call (1.60s per example, about 9 min left)
+2026-10-05T14:08:34    s1: 1344/1600 this call (1.58s per example, about 7 min left)
+2026-10-05T14:09:54    s1: 1408/1600 this call (1.57s per example, about 5 min left)
+2026-10-05T14:11:13    s1: 1472/1600 this call (1.55s per example, about 3 min left)
+2026-10-05T14:12:31    s1: 1536/1600 this call (1.54s per example, about 2 min left)
+2026-10-05T14:13:47    s1: 1600/1600 this call (1.53s per example, about 0 min left)
+2026-10-05T14:13:47  --- s2: 1600 examples, 1600 still to score
+2026-10-05T14:14:22    s2: 64/1600 this call (0.53s per example, about 14 min left)
+2026-10-05T14:14:51    s2: 128/1600 this call (0.50s per example, about 12 min left)
+2026-10-05T14:15:17    s2: 192/1600 this call (0.46s per example, about 11 min left)
+2026-10-05T14:15:40    s2: 256/1600 this call (0.44s per example, about 10 min left)
+2026-10-05T14:16:02    s2: 320/1600 this call (0.42s per example, about 9 min left)
+2026-10-05T14:16:23    s2: 384/1600 this call (0.41s per example, about 8 min left)
+2026-10-05T14:16:44    s2: 448/1600 this call (0.39s per example, about 8 min left)
+2026-10-05T14:17:04    s2: 512/1600 this call (0.38s per example, about 7 min left)
+2026-10-05T14:17:23    s2: 576/1600 this call (0.38s per example, about 6 min left)
+2026-10-05T14:17:42    s2: 640/1600 this call (0.37s per example, about 6 min left)
+2026-10-05T14:17:59    s2: 704/1600 this call (0.36s per example, about 5 min left)
+2026-10-05T14:18:15    s2: 768/1600 this call (0.35s per example, about 5 min left)
+2026-10-05T14:18:32    s2: 832/1600 this call (0.34s per example, about 4 min left)
+2026-10-05T14:18:48    s2: 896/1600 this call (0.34s per example, about 4 min left)
+2026-10-05T14:19:04    s2: 960/1600 this call (0.33s per example, about 4 min left)
+2026-10-05T14:19:20    s2: 1024/1600 this call (0.32s per example, about 3 min left)
+2026-10-05T14:19:35    s2: 1088/1600 this call (0.32s per example, about 3 min left)
+2026-10-05T14:19:51    s2: 1152/1600 this call (0.32s per example, about 2 min left)
+2026-10-05T14:20:05    s2: 1216/1600 this call (0.31s per example, about 2 min left)
+2026-10-05T14:20:20    s2: 1280/1600 this call (0.31s per example, about 2 min left)
+2026-10-05T14:20:34    s2: 1344/1600 this call (0.30s per example, about 1 min left)
+2026-10-05T14:20:49    s2: 1408/1600 this call (0.30s per example, about 1 min left)
+2026-10-05T14:21:01    s2: 1472/1600 this call (0.29s per example, about 1 min left)
+2026-10-05T14:21:14    s2: 1536/1600 this call (0.29s per example, about 0 min left)
+2026-10-05T14:21:26    s2: 1600/1600 this call (0.29s per example, about 0 min left)
+2026-10-05T14:21:57  baseline reference: 1560 replies from /content/drive/MyDrive/refusalbench-results/qwen15_7b_baseline
+2026-10-05T14:21:57  --- cross-fitting thresholds and the probe over source questions
+2026-10-05T14:22:32    fold 0: train 1302, held out 298; probe uses s1_mid, C=0.01
+2026-10-05T14:23:11    fold 1: train 1269, held out 331; probe uses s1_mid, C=0.001
+2026-10-05T14:23:48    fold 2: train 1279, held out 321; probe uses s2_last, C=0.001
+2026-10-05T14:24:27    fold 3: train 1268, held out 332; probe uses s1_mid, C=0.01
+2026-10-05T14:25:03    fold 4: train 1282, held out 318; probe uses s2_mid, C=0.01
+2026-10-05T14:25:03  --- bootstrap
+2026-10-05T14:25:11  written: /content/drive/MyDrive/refusalbench-results/novelty2_confidence_threshold/RESULT_AUTO.md
+2026-10-05T14:25:11  === DONE
+2026-10-05T14:25:11  S1 AUROC 0.726 | S2 0.751 | S3 0.797
+2026-10-05T14:25:11  verdict (mechanical): SIGNAL BUT NO GAIN FROM THE THRESHOLD
+2026-10-05T14:25:12  report: /content/drive/MyDrive/refusalbench-results/novelty2_confidence_threshold/RESULT_AUTO.md
