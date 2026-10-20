@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reading, Not Asking · MSc defense</title>
+<meta name="description" content="Defense deck, 8 slides: the RefusalBench paper, our reproduction with Qwen1.5-7B-Chat on a Colab T4, one failed extension and one that finds a real signal.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+/* ===== tokens ===== */
+:root{
+  --ink:#14213d; --muted:#5b6577; --line:#dfe3ea; --paper:#ffffff; --bg:#e9ecf1;
+  --teal:#0f9d8a; --teal-bg:#def4f0; --rust:#b5541a; --rust-bg:#fbf1e9;
+  --blue:#2f6fde; --blue-bg:#e7effc; --rose:#d6336c; --rose-bg:#fdd9e5; --grey:#9aa3b2;
+  --serif:"Source Serif 4","Lora",Georgia,serif;
+  --sans:"IBM Plex Sans","Inter","Liberation Sans",Arial,sans-serif;
+  --mono:"IBM Plex Mono","DejaVu Sans Mono",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--sans)}
+body{overflow:hidden}
+svg text{font-family:var(--sans)}
+
+/* ===== stage: a fixed 1280x720 canvas, scaled to the window ===== */
+#viewport{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{position:relative;width:1280px;height:720px;flex:none;transform-origin:center center}
+.slide{position:absolute;inset:0;background:var(--paper);padding:44px 72px 40px;display:none;flex-direction:column;
+  box-shadow:0 10px 40px rgba(20,33,61,.18);overflow:hidden}
+.slide.active{display:flex}
+.slide::before{content:"";position:absolute;left:0;top:0;bottom:0;width:8px;background:var(--ink)}
+.slide.dark{background:var(--ink);color:#fff}
+.slide.dark::before{background:var(--rust)}
+
+/* ===== header ===== */
+.eyebrow{font:600 15px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--rust);margin-bottom:12px}
+.part{position:absolute;top:22px;right:40px;font:500 13px/1 var(--sans);color:var(--muted);display:flex;gap:14px}
+.part span.on{color:var(--ink);font-weight:600;border-bottom:2px solid var(--rust);padding-bottom:3px}
+h1{font:600 76px/1.05 var(--serif);letter-spacing:-.01em}
+h2{font:600 36px/1.15 var(--serif);margin-bottom:16px}
+h3{font:600 21px/1.2 var(--sans);margin-bottom:8px}
+p,li{font-size:21px;line-height:1.42}
+.sm,.sm li{font-size:18px;line-height:1.42}
+.xs{font-size:15px;line-height:1.38}
+.lead{font:400 28px/1.35 var(--serif);color:var(--muted);max-width:38ch}
+.muted{color:var(--muted)}
+b{font-weight:600}
+ul{padding-left:1.1em}
+li{margin:4px 0}
+code,.mono{font-family:var(--mono);font-size:.9em}
+mark{background:var(--rose-bg);color:inherit;padding:0 4px;border-radius:3px}
+.gap{margin-top:14px}.gap2{margin-top:24px}.gap3{margin-top:36px}
+.mid{display:flex;flex-direction:column;justify-content:center;flex:1}
+.role{font:600 13px/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+
+/* ===== layout ===== */
+.cols{display:grid;gap:32px}
+.c2{grid-template-columns:1fr 1fr}.c3{grid-template-columns:repeat(3,1fr)}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:14px;align-items:center}
+
+/* ===== boxes and flows ===== */
+.flow{display:flex;align-items:center;gap:0}
+.bx{flex:1;border:1.8px solid var(--ink);border-radius:7px;padding:10px 12px;background:#fff;font-size:18px;line-height:1.3}
+.bx b{display:block;font-size:19px}
+.bx small{display:block;font-size:15px;color:var(--muted);margin-top:3px;line-height:1.3}
+.bx .role{margin-bottom:6px}
+.bx.blue{background:var(--blue-bg);border-color:var(--blue)}
+.bx.teal{background:var(--teal-bg);border-color:var(--teal)}
+.bx.acc{background:var(--rust-bg);border-color:var(--rust)}
+.bx.fill{background:var(--ink);color:#fff;border-color:var(--ink)}
+.bx.fill small{color:#c9d0de}
+.bx.bad{background:rgba(255,255,255,.06);border-color:#e98a8a;color:#fff}
+.bx.bad small{color:#c9d0de}
+i.ar{flex:none;width:30px;height:2px;background:var(--ink);position:relative;margin:0 4px}
+i.ar::after{content:"";position:absolute;right:-1px;top:-5px;border:6px solid transparent;border-left:9px solid var(--ink);border-right:0}
+.dark i.ar{background:#aab4c8}.dark i.ar::after{border-left-color:#aab4c8}
+.split2{flex:1;display:flex;flex-direction:column;gap:6px}
+.split2 .bx{padding:6px 10px}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--ink);border-radius:999px;padding:5px 13px;font-size:17px;background:#fff}
+.chip.k{border-color:var(--teal);background:var(--teal-bg);font-size:16px}
+
+.sbar{display:flex;height:34px;border-radius:5px;overflow:hidden;color:#fff;font:600 16px/34px var(--sans)}
+.sbar div{text-align:center}
+
+.stat{border-left:4px solid var(--rust);padding:2px 0 2px 14px}
+.stat .n{font:600 40px/1.05 var(--serif)}
+.stat .t{font-size:16px;line-height:1.3;color:var(--muted);margin-top:2px}
+.stat.sm .n{font-size:30px}
+
+.note{border-radius:7px;padding:10px 14px;font-size:17px;line-height:1.38;background:var(--blue-bg);border-left:4px solid var(--blue)}
+.note.warn{background:#fff6e6;border-left-color:#e0a100}
+.note.plain{background:#f2f4f7;border-left-color:var(--ink)}
+.cap{font-size:15px;line-height:1.4;color:var(--muted)}
+
+.hyp{border:1.8px dashed var(--rust);border-radius:8px;padding:9px 14px;font:400 20px/1.35 var(--serif);background:var(--rust-bg)}
+.hyp small{display:block;font:600 12px/1 var(--sans);letter-spacing:.12em;color:var(--rust);margin-bottom:5px}
+.prompt{border-left:4px solid var(--grey);background:#f5f6f8;padding:7px 12px;font-size:17px;line-height:1.35;border-radius:0 6px 6px 0}
+.prompt .lbl{display:block;font:600 12px/1 var(--sans);letter-spacing:.1em;color:var(--muted);margin-bottom:4px}
+.bignum{font:600 72px/1 var(--serif)}
+.bignum small{font-size:30px;color:var(--muted)}
+.mini{display:grid;grid-template-columns:150px 1fr 70px;align-items:center;gap:10px;margin:7px 0;font-size:17px}
+.track{height:20px;background:#eceff3;border-radius:4px;overflow:hidden}
+.track .fill{height:100%;background:var(--ink)}
+.track .fill.grey{background:var(--grey)}.track .fill.rose{background:var(--rose)}
+.mini .val{font-weight:600;text-align:right}
+
+.turn{margin-top:auto;display:flex;align-items:center;gap:22px;background:var(--ink);color:#fff;border-radius:9px;padding:12px 22px}
+.turn .lbl{font:600 12px/1.2 var(--sans);letter-spacing:.12em;color:#f2b38a;text-transform:uppercase;flex:none}
+.turn .big{font:600 27px/1.2 var(--serif)}
+.turn .big .hl{color:#7fe0d0}
+.turn .small{font-size:16px;color:#c9d0de;margin-left:auto;max-width:34ch;line-height:1.35}
+
+.folds{display:flex;gap:6px}
+.fold{flex:1;text-align:center;border-radius:5px;padding:7px 0;font:600 15px/1 var(--sans)}
+.fold.train{background:var(--blue-bg);color:var(--blue);border:1.5px solid var(--blue)}
+.fold.held{background:var(--rust);color:#fff;border:1.5px solid var(--rust)}
+
+.neq{display:flex;align-items:baseline;justify-content:center;gap:22px;font:600 44px/1 var(--serif)}
+.neq .d{color:var(--teal)}.neq .x{color:var(--rust)}.neq .p{color:var(--ink)}
+.colrule{border-top:3px solid var(--ink);padding-top:9px}
+.colrule ul{font-size:16px}.colrule li{font-size:16px;line-height:1.35;margin:3px 0}
+
+.who{display:flex;justify-content:space-between;font-size:19px;color:var(--muted);border-top:1.5px solid var(--line);padding-top:14px}
+.who b{color:var(--ink)}
+
+.refs{columns:3;column-gap:30px;list-style:none;padding:0}
+.refs li{font-size:15.4px;line-height:1.36;margin:0 0 9px;break-inside:avoid;padding-left:24px;text-indent:-24px}
+.refs li span{display:inline-block;width:24px;text-indent:0;color:var(--muted)}
+
+/* ===== per-slide sizing: each slide's content fills its height ===== */
+.chip.hl{background:#fde3cf;border-color:var(--rust);font-weight:500}
+[data-title="The paper: problem"] .bx{font-size:22.5px!important;padding:16px 20px!important}
+[data-title="The paper: problem"] .chips{margin-top:4px}
+[data-title="The paper: problem"] > .role{margin-top:34px}
+[data-title="The paper: problem"] p.sm.gap2{margin-top:34px}
+[data-title="The paper: problem"] p.sm{font-size:19px}
+[data-title="The paper: solution"] .flow > .bx{min-height:124px;padding:14px 15px;display:flex;flex-direction:column;justify-content:center}
+[data-title="The paper: solution"] .flow > .bx b{font-size:21px}
+[data-title="The paper: solution"] .flow .bx small{font-size:16.5px}
+[data-title="The paper: solution"] .split2 .bx b{font-size:20px}
+[data-title="The paper: solution"] .split2 .bx{min-height:0;padding:10px 13px}
+[data-title="The paper: solution"] .sbar{height:46px;font-size:18px;line-height:46px}
+[data-title="The paper: solution"] > .role{margin-top:40px}
+[data-title="Results and our reproduction"] .stat.sm .n{font-size:36px}
+[data-title="Results and our reproduction"] .stat .t{font-size:17px}
+[data-title="Results and our reproduction"] .stack{gap:16px}
+[data-title="Results and our reproduction"] .note{margin-top:24px;font-size:18px}
+[data-title="Extension 1"] .hyp{font-size:22px;padding:12px 16px}
+[data-title="Extension 1"] .prompt{font-size:19px;padding:10px 14px}
+[data-title="Extension 1"] .stack{gap:14px}
+[data-title="Extension 1"] .bignum{font-size:88px}
+[data-title="Extension 1"] .mini{font-size:19px;margin:11px 0}
+[data-title="Extension 1"] .track{height:26px}
+[data-title="Extension 2: method"] .hyp{font-size:20.5px;padding:12px 16px}
+[data-title="Extension 2: method"] .flow .bx{padding:14px 15px}
+[data-title="Extension 2: method"] .split2{gap:9px}
+[data-title="Extension 2: method"] .split2 .bx{padding:11px 13px}
+[data-title="Extension 2: method"] .split2 .bx small{font-size:16px}
+[data-title="Extension 2: method"] .cols{margin-top:50px}
+[data-title="Extension 2: method"] .fold{padding:17px 0;font-size:17px}
+[data-title="Extension 2: method"] .flow{margin-top:30px}
+[data-title="Extension 2: method"] ul.sm li{font-size:20px}
+[data-title="Extension 2: results"] .colrule li{font-size:17px}
+[data-title="References"] .refs li{font-size:15.9px;margin-bottom:9px}
+
+/* ===== notes and step reveals ===== */
+aside{display:none}
+[data-step]{transition:opacity .25s}
+.slide.active [data-step].hidden{opacity:0;visibility:hidden}
+
+/* ===== viewer chrome ===== */
+#bar{position:absolute;left:0;bottom:0;height:4px;background:var(--rust);z-index:5;transition:width .2s}
+#hud{position:fixed;right:16px;bottom:14px;display:flex;gap:8px;align-items:center;font:500 14px var(--sans);color:var(--muted);z-index:20}
+#hud button{font:inherit;border:1px solid #c5ccd6;background:#fff;border-radius:6px;padding:5px 11px;cursor:pointer;color:var(--ink)}
+#help{position:fixed;left:16px;bottom:14px;font:400 13px var(--sans);color:var(--muted);z-index:20}
+#notes{position:fixed;left:0;right:0;bottom:0;max-height:38vh;overflow:auto;background:#fffdf5;border-top:3px solid var(--rust);
+  padding:14px 22px 46px;font:400 16px/1.5 var(--sans);color:var(--ink);display:none;z-index:15;white-space:pre-wrap}
+#notes.on{display:block}
+
+/* ===== print / PDF: one slide per page, every step shown ===== */
+@page{size:1280px 720px;margin:0}
+@media print{
+  html,body{background:#fff;overflow:visible;height:auto}
+  #viewport{position:static;display:block}
+  #stage{transform:none!important;width:1280px;height:auto}
+  .slide{position:relative;display:flex!important;width:1280px;height:720px;box-shadow:none;page-break-after:always;break-after:page}
+  .slide [data-step].hidden{opacity:1!important;visibility:visible!important}
+  #bar,#hud,#help,#notes{display:none!important}
+}
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+<div id="bar"></div>
+
+<!-- ============================================================ 0 · COVER -->
+<section class="slide" data-title="Cover">
+  <div class="eyebrow">MSc project defense · Data Science for Conversational AI · Topic: Grounding</div>
+  <div class="mid">
+    <h1>Reading, Not Asking</h1>
+    <p class="lead gap2">Probing a small language model's internal signal for selective refusal in grounded question answering.</p>
+  </div>
+  <div class="who" style="align-items:flex-end"><span><b>Team:</b> Mohammad Jomaa · Abbass Zahreddine · Ahmad Assaf<br>M2 Data Science, Lebanese University</span><span><b>Paper:</b> RefusalBench, Muhamed et al., EACL 2026</span></div>
+  <aside>About 0.5 minutes. Introduce the three of you (any of us can be asked about any part) and give the whole story in three sentences, so the room knows where it is going.
+"We took a research paper about when language models should refuse to answer. We reproduced it with a small model on a Google Colab T4. We tested two ideas to improve it: the first failed clearly; the second finds a real signal inside the model, but it does not clearly beat the baseline, and I will say exactly what the numbers do and do not prove."
+Three parts, shown at the top right of every slide: the paper, extension 1, extension 2.</aside>
+</section>
+
+<!-- ============================================================ 1 · PAPER: PROBLEM -->
+<section class="slide" data-title="The paper: problem" data-part="0">
+  <div class="eyebrow">The paper · Problem</div>
+  <h2>A grounded model must refuse when its evidence is flawed, and say why</h2>
+  <p class="sm">A <b>grounded</b> model answers only from the passage it is given. <b>Selective refusal</b>: answer when the passage supports it, refuse and name the reason when it does not.</p>
+  <div class="flow gap2" style="align-items:stretch">
+    <div class="bx" style="flex:5;font-size:21px;line-height:1.38;padding:14px 16px"><div class="role">ORIGINAL · ANSWERABLE</div>
+      <b style="display:inline">Q:</b> When did the East India Company take control of India?<br><b style="display:inline">Passage:</b> The East India Company gained a foothold in India in 1611.<br><b style="display:inline">Reply:</b> 1611</div>
+    <div style="padding:0 14px;text-align:center;font-size:16px;color:var(--muted);align-self:center">one sentence<br>changed<br><span style="font-size:30px;color:var(--rust)">&rarr;</span></div>
+    <div class="bx acc" style="flex:5;font-size:21px;line-height:1.38;padding:14px 16px"><div class="role">PERTURBED · MUST REFUSE</div>
+      <b style="display:inline">Q:</b> When did <i>the company</i> take control of India?<br><b style="display:inline">Passage:</b> ...in 1611. <mark>The Dutch East India Company established posts in India.</mark><br><b style="display:inline">Reply:</b> refuse, because "the company" is ambiguous</div>
+  </div>
+  <div class="role gap2">SIX REASONS TO REFUSE, EACH WITH ITS OWN REFUSAL CODE</div>
+  <div class="chips">
+    <span class="chip hl">Ambiguity</span><span class="chip hl">Contradiction</span><span class="chip hl">Missing information</span>
+    <span class="chip hl">False premise</span><span class="chip hl">Granularity mismatch</span><span class="chip hl">Epistemic mismatch</span>
+  </div>
+  <p class="sm gap2 muted">Why it matters: the paper reports models refusing over 60% of answerable queries, or answering confidently despite critical defects. And a static test set is easy to memorize, so the paper <b style="color:var(--ink)">generates</b> its test cases instead.</p>
+  <aside>About 1.5 minutes. Define the two terms out loud: grounded, and selective refusal. The example is Figure 1 of the paper: one sentence added to the passage turns an answerable question into one the model must refuse.
+The six reasons, with the benchmark's own examples: ambiguity ("the bat's weight" when the text has a baseball bat and an animal); contradiction ("revenue was $10M" and "revenue was $12M"); missing information ("who is the CEO?" when the text only describes products); false premise ("why did the Mars division fail?" when there is no Mars division); granularity mismatch ("average salary" when only two of fifty salaries are given); epistemic mismatch ("is this a good investment?" when only a stock price is given).
+Likely question: "Why not always answer?" A confident answer from a flawed passage can be wrong and harmful.
+Second problem of the paper: static benchmarks get memorized and saturate; that is why it generates fresh test cases (next slide).</aside>
+</section>
+
+<!-- ============================================================ 2 · PAPER: SOLUTION -->
+<section class="slide" data-title="The paper: solution" data-part="0">
+  <div class="eyebrow">The paper · Solution</div>
+  <h2>RefusalBench: break good evidence on purpose, then score the replies</h2>
+  <div class="role">1 · BUILDING THE TEST (done by the paper's authors)</div>
+  <div class="flow" data-step="1">
+    <div class="bx blue"><b>100 questions</b><small>good passage, answered correctly by every strong model</small></div><i class="ar"></i>
+    <div class="bx blue"><b>Break them</b><small>176 rewrite rules, 6 failure types, 3 strengths</small></div><i class="ar"></i>
+    <div class="bx blue"><b>Generate and verify</b><small>4 LLMs write them, all 4 must approve</small></div><i class="ar"></i>
+    <div class="bx fill"><b>1,600 examples</b><small>the released test set, 93.1% valid by hand</small></div>
+  </div>
+  <div class="sbar gap" data-step="2"><div style="flex:536;background:var(--teal)">536 answerable (LOW strength)</div><div style="flex:1064;background:var(--rose)">1,064 must be refused (MEDIUM, HIGH)</div></div>
+  <div class="role gap3">2 · SCORING A MODEL</div>
+  <div class="flow" data-step="3">
+    <div class="bx teal"><b>Target model</b><small>the model being tested</small></div><i class="ar"></i>
+    <div class="bx"><b>Reply</b><small>an answer or a refusal code</small></div><i class="ar"></i>
+    <div class="bx acc"><b>Judge LLM</b><small>Claude-4-Sonnet in the paper</small></div><i class="ar"></i>
+    <div class="split2">
+      <div class="bx"><b style="display:inline">Answer</b>: score 1 to 5<small>4 or 5 is correct</small></div>
+      <div class="bx"><b style="display:inline">Refusal</b>: code compared<small>same as expected is correct</small></div>
+    </div>
+  </div>
+  <aside>About 2 minutes. Click through the three steps.
+Step 1: the benchmark is generated, not collected. 176 rewrite rules ("levers"), about 10 for each of the 18 combinations of six failure types and three strengths. Four strong LLMs (Claude-4-Sonnet, DeepSeek-R1, GPT-4o, Nova-Pro) each rewrite a good example to break it in a known way, every model checks every rewrite against seven criteria, and a broken example is kept only if all of them approve. Why all of them: models rate their own outputs too kindly (91.0% against 82.1% for others'). An expert checked 180 random examples: 93.1% were valid. So every example has a known correct reply.
+Step 2: LOW strength must be answered, MEDIUM and HIGH must be refused: 536 answerable, 1,064 to refuse. All 1,600 are variants of only 100 questions, so they are not independent: this is why our later tests keep variants of one question together.
+Step 3: three roles. The builders wrote the test (already done, we did not rerun it). The target model is the student. The judge is the grader: it must be a different model from the student. A refusal is correct only if its code equals the expected code; an answer is correct if the judge scores it 4 or 5.
+Likely question: "Who judges the judge?" In the paper an expert checked the benchmark examples, not the judge. For our Gemini judge the 30-reply hand check is still to do; it is listed as a limit.</aside>
+</section>
+
+<!-- ============================================================ 3 · PAPER: RESULTS + OUR REPRODUCTION -->
+<section class="slide" data-title="Results and our reproduction" data-part="0">
+  <div class="eyebrow">The paper · Results, and our reproduction</div>
+  <h2>Best models are far from reliable; small ones rarely say why</h2>
+  <div class="cols" style="grid-template-columns:1fr 1.08fr;gap:40px">
+    <div class="stack">
+      <div class="role">THE PAPER · 30+ MODELS</div>
+      <div class="stat sm"><div class="n">73.0%</div><div class="t">best refusal accuracy on this test set (Claude-4-Sonnet); 47.4% on the multi-document set</div></div>
+      <div class="stat sm"><div class="n">None</div><div class="t">of the models reaches 80% on both answering and refusing</div></div>
+      <ul class="sm">
+        <li><b>Detecting</b> that a refusal is needed is easier than saying <b>why</b>.</li>
+        <li>Qwen: refusal accuracy below 17% at every size. <b>Qwen1.5-7B-Chat: about 5%.</b> The paper's only remedy is training.</li>
+      </ul>
+    </div>
+    <div class="stack" data-step="1">
+      <div class="role">OUR REPRODUCTION · QWEN1.5-7B-CHAT · T4 · 4-BIT · GEMINI JUDGE</div>
+      <svg width="560" height="300" viewBox="0 0 520 300" role="img" aria-label="Answer accuracy and refusal accuracy, paper versus ours.">
+<rect x="0" y="6" width="16" height="16" rx="3" fill="#9aa3b2"/><text x="24" y="20" font-size="19">Paper</text>
+<rect x="112" y="6" width="16" height="16" rx="3" fill="#2f6fde"/><text x="136" y="20" font-size="19">Ours</text>
+<line x1="40" y1="250" x2="500" y2="250" stroke="#14213d" stroke-width="2"/>
+<rect x="72" y="121.0" width="74" height="129.0" fill="#9aa3b2" rx="3"/>
+<text x="109" y="112.0" text-anchor="middle" font-size="20" font-weight="600">0.561</text>
+<rect x="154" y="91.3" width="74" height="158.7" fill="#2f6fde" rx="3"/>
+<text x="191" y="82.3" text-anchor="middle" font-size="20" font-weight="600">0.690</text>
+<text x="150" y="278" text-anchor="middle" font-size="20" font-weight="600">Answer accuracy</text>
+<rect x="312" y="238.5" width="74" height="11.5" fill="#9aa3b2" rx="3"/>
+<text x="349" y="229.5" text-anchor="middle" font-size="20" font-weight="600">~0.05</text>
+<rect x="394" y="223.8" width="74" height="26.2" fill="#2f6fde" rx="3"/>
+<text x="431" y="214.8" text-anchor="middle" font-size="20" font-weight="600">0.114</text>
+<text x="390" y="278" text-anchor="middle" font-size="20" font-weight="600">Refusal accuracy</text>
+<text x="390" y="298" text-anchor="middle" font-size="16" fill="#5b6577">refused, with the right reason</text>
+</svg>
+      <div class="row" style="gap:28px">
+        <div class="stat sm"><div class="n">0.456</div><div class="t">missed refusal: had to refuse, answered</div></div>
+        <div class="stat sm"><div class="n">0.165</div><div class="t">false refusal: answerable, refused</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="note warn gap" data-step="2"><b>The paper's pattern reproduces, not its exact numbers.</b> 770 of 1,560 replies graded so far (free judge quota); judge, precision and software differ, so the numbers are not directly comparable. Most missed: ambiguity (0.74), contradiction (0.71).</div>
+  <aside>About 2 minutes. Left, the paper's numbers (all its own): 73.0% and 47.4% are in the introduction and Figure 5; "no model above 80% on both" is the Figure 5 caption; Qwen below 17% at every size is the scaling section. The Qwen-7B refusal accuracy of about 5% is read from a small plot, so say "about". The paper measures this weakness; the only remedy it points to is alignment training. That is where our work starts.
+Click once: our reproduction. Same 1,600 examples, the paper's prompt word for word, temperature 1.0. Changed: one free Colab T4 instead of four A100 GPUs, 4-bit weights (a 7B model is about 15 GB at 16-bit, about 5 GB in 4-bit), Gemini instead of Claude as judge, and the judge is used only for the 66% of replies that are not one clean refusal code. A reply with no code is NOT assumed to be an answer: a small model often refuses in plain words.
+Read the headline: refusal accuracy is low in both (0.114 against about 0.05). Our answer accuracy is higher (0.690 against 0.561); I do not claim to beat the paper, because the judge, the 4-bit model and the software differ.
+Terms used from now on: missed refusal (had to refuse, answered), false refusal (answerable, refused). Balanced accuracy = 1 minus their average: 1 - (0.165 + 0.456) / 2 = 0.690, where 0.5 is a coin flip. It happens to equal our answer accuracy; they are different numbers.
+Likely question: "Is the baseline finished?" No: 770 graded (a seeded random sample, checked to be representative), 40 examples (2.5%) ran out of GPU memory and are excluded.</aside>
+</section>
+
+<!-- ============================================================ 4 · EXTENSION 1 -->
+<section class="slide" data-title="Extension 1" data-part="1">
+  <div class="eyebrow">Extension 1 · Idea and result</div>
+  <h2>Asking the model to diagnose the evidence first failed</h2>
+  <div class="cols" style="grid-template-columns:5fr 6fr;gap:44px">
+    <div class="stack">
+      <div class="hyp"><small>HYPOTHESIS</small>If the model first names what is wrong with the evidence, its decision improves. No training needed.</div>
+      <div class="prompt"><span class="lbl">BASELINE</span>Answer from the passage, or reply with a refusal code.</div>
+      <div class="prompt"><span class="lbl">CONTROL</span>Same, plus <mark>end with a FINAL: line</mark></div>
+      <div class="prompt" style="border-left-color:var(--rose)"><span class="lbl">DIAGNOSE FIRST</span>Same, plus <mark>first write EVIDENCE_STATE: clear, or one of six problems</mark>, then FINAL:</div>
+    </div>
+    <div data-step="1">
+      <div class="role">HOW OFTEN THE MODEL WROTE "CLEAR"</div>
+      <div class="bignum">762<small> / 800</small></div>
+      <p class="sm"><b>95%</b>, including <b>504 of the 532</b> examples that had to be refused.</p>
+      <div class="role gap2">NEEDED REFUSALS CAUGHT (776 SHARED EXAMPLES)</div>
+      <div class="mini"><span>Baseline</span><div class="track"><div class="fill" style="width:43.3%"></div></div><span class="val">43.3%</span></div>
+      <div class="mini"><span>Control</span><div class="track"><div class="fill grey" style="width:35.8%"></div></div><span class="val">35.8%</span></div>
+      <div class="mini"><span>Diagnose first</span><div class="track"><div class="fill rose" style="width:1.9%"></div></div><span class="val">1.9%</span></div>
+    </div>
+  </div>
+  <div class="turn" data-step="2">
+    <span class="lbl">Turning point</span>
+    <span class="big">Do not ask the model. <span class="hl">Read it.</span></span>
+    <span class="small">If its written answer cannot be trusted, look at what it computes before it writes.</span>
+  </div>
+  <aside>About 2 minutes. Give the failure its full time: a clean negative result is worth marks for honesty and result quality.
+The limitation targeted: the paper shows small models rarely name the right reason, and offers no fix without training. The idea: make the diagnosis an explicit first step.
+The control changes only one thing, a final line, so we can tell whether tidier output alone explains a difference. The control is also slightly worse than the baseline, but nothing like this.
+Numbers: 800 stratified examples (268 answerable, 532 to refuse) covering all 100 source questions; the bars use the 776 examples also present in the baseline and count clean refusal codes only, so the baseline and control figures are lower bounds. Differences are significant (paired bootstrap over source questions: diagnose first minus baseline -41.4 points, interval -46.1 to -36.7). By type, CLEAR on: ambiguity 68 of 69, contradiction 87 of 94, missing information 87 of 92, false premise 89 of 93, granularity 83 of 92, epistemic 90 of 92, answerable 258 of 268. The only valid non-clear state it ever wrote was MISSING_INFORMATION, 7 times.
+Likely question: "Why did it fail?" I do not know. "Anchoring on clear", the first option listed, would be a guess, not a finding; I tested nothing about the mechanism. Reordering the options is the first follow-up test.
+Click for the turning point, and say it slowly: "My first idea asked the model what was wrong with the evidence. It said everything was clear, 95% of the time. So the second idea does not ask. It reads the signal the model already computes, before it writes a single word."</aside>
+</section>
+
+<!-- ============================================================ 5 · EXTENSION 2: METHOD -->
+<section class="slide" data-title="Extension 2: method" data-part="2">
+  <div class="eyebrow">Extension 2 · Idea and method</div>
+  <h2>Read the model's own signal instead of its written answer</h2>
+  <div class="hyp"><small>HYPOTHESIS</small>Scores and hidden states separate the cases that need a refusal, even when the written decisions miss them.</div>
+  <div class="flow gap2" style="align-items:stretch">
+    <div class="bx" style="flex:.8;display:flex;align-items:center"><b>Question + passage</b></div><i class="ar" style="align-self:center"></i>
+    <div class="bx teal" style="flex:1.1"><b>Qwen1.5-7B</b><small>one forward pass per prompt, no text written</small></div><i class="ar" style="align-self:center"></i>
+    <div class="split2" style="flex:2.1">
+      <div class="bx blue"><b style="display:inline">S1</b> · refusal probability<small>chance the reply opens with a refusal code</small></div>
+      <div class="bx blue"><b style="display:inline">S2</b> · yes or no<small>"can it be answered?": chance of No against Yes</small></div>
+      <div class="bx acc"><b style="display:inline">S3</b> · linear probe<small>classifier on the hidden state (uses labels)</small></div>
+    </div><i class="ar" style="align-self:center"></i>
+    <div class="bx fill" style="flex:1;display:flex;flex-direction:column;justify-content:center"><b>Score above a threshold?</b><small>yes: refuse, no: answer</small></div>
+  </div>
+  <div class="cols c2 gap2" style="align-items:center" data-step="1">
+    <div>
+      <div class="role">EVALUATION · 5 GROUPS OF SOURCE QUESTIONS</div>
+      <div class="folds"><div class="fold train">tune</div><div class="fold train">tune</div><div class="fold train">tune</div><div class="fold train">tune</div><div class="fold held">test</div></div>
+      <p class="cap gap">Repeated so each group is tested once.</p>
+    </div>
+    <ul class="sm">
+      <li>Tuned on other questions only: variants of one question never sit on both sides.</li>
+      <li>Intervals resample whole questions. The success rule was fixed before the run.</li>
+    </ul>
+  </div>
+  <aside>About 1.75 minutes. A probe is just a simple classifier (logistic regression) that looks at the model's internal numbers; the hidden state is the numbers the model computes on the way to its answer. Higher score always means "refuse". Nothing is generated: each score comes from one forward pass under its own prompt (S1 uses the paper's prompt, S2 a second yes/no prompt, S3 reads the hidden states of either pass).
+S1 detail if asked: a refusal code is several tokens and Qwen sometimes wraps it (two asterisks, a backtick, "ANSWER:"), so we add up the probability of every wrapped opening.
+Say clearly: S1 and S2 at their default thresholds use no labels; S3 is trained with the benchmark's labels. That is why the probe is a diagnostic of what the hidden state contains, not an equal-training comparison with the baseline.
+Why the five groups: the 1,600 examples are variants of 100 questions. A random split would put variants of the same question in training and test, and the result would look better than it is. A unit test corrupts the labels of one group and checks that the threshold for that group does not change. Honest limit: the intervals resample the held-out predictions; the fitting is not repeated inside each resample.
+Success rule, fixed before the run: signal if the lower end of S1's AUROC interval is above 0.5; gain if the tuned threshold beats the default with its interval above zero.
+Scoring takes about 0.3 seconds per example on a T4. Likely question: "Where is your novelty?" Reading these signals for grounded refusal on this benchmark with a small open model, tested against the paper's baseline, with the version that did not work reported honestly. Related work (Yin et al., R-Tuning, Self-RAG) changes the model by training; ours keeps the weights fixed. We searched for follow-ups of RefusalBench: one citing paper (HopRefusalBench), a new benchmark with no method.</aside>
+</section>
+
+<!-- ============================================================ 6 · EXTENSION 2: RESULTS + CONCLUSION -->
+<section class="slide" data-title="Extension 2: results" data-part="2">
+  <div class="eyebrow">Extension 2 · Results and conclusion</div>
+  <h2>The signal exists; a better decision than the baseline is not shown</h2>
+  <svg width="1136" height="338" viewBox="0 70 1136 340" role="img" aria-label="Left: AUROC of the three readouts with 95 percent intervals, all above chance. Right: difference in balanced accuracy versus the baseline; only S1 excludes zero, and it is worse; the probe interval crosses zero.">
+<text x="0" y="90" font-size="22" font-weight="600">A. Is there information inside the model?</text>
+<text x="0" y="114" font-size="17" fill="#5b6577">AUROC, 95% interval (1,600 examples): 0.5 is chance</text>
+<text x="616" y="90" font-size="22" font-weight="600">B. Does using it beat the baseline?</text>
+<text x="616" y="114" font-size="17" fill="#5b6577">Balanced accuracy minus baseline (0.690), 770 examples</text>
+<line x1="140.0" y1="128" x2="140.0" y2="338" stroke="#dfe3ea" stroke-width="1.5"/>
+<text x="140.0" y="362" text-anchor="middle" font-size="17" fill="#5b6577">0.5</text>
+<line x1="227.5" y1="128" x2="227.5" y2="338" stroke="#dfe3ea" stroke-width="1.5"/>
+<text x="227.5" y="362" text-anchor="middle" font-size="17" fill="#5b6577">0.6</text>
+<line x1="315.0" y1="128" x2="315.0" y2="338" stroke="#dfe3ea" stroke-width="1.5"/>
+<text x="315.0" y="362" text-anchor="middle" font-size="17" fill="#5b6577">0.7</text>
+<line x1="402.5" y1="128" x2="402.5" y2="338" stroke="#dfe3ea" stroke-width="1.5"/>
+<text x="402.5" y="362" text-anchor="middle" font-size="17" fill="#5b6577">0.8</text>
+<line x1="490.0" y1="128" x2="490.0" y2="338" stroke="#dfe3ea" stroke-width="1.5"/>
+<text x="490.0" y="362" text-anchor="middle" font-size="17" fill="#5b6577">0.9</text>
+<line x1="140.0" y1="128" x2="140.0" y2="338" stroke="#14213d" stroke-width="2.2" stroke-dasharray="6 5"/>
+<text x="148.0" y="144" font-size="17" fill="#5b6577">chance</text>
+<line x1="790.0" y1="128" x2="790.0" y2="338" stroke="#dfe3ea" stroke-width="1.5"/>
+<text x="790.0" y="362" text-anchor="middle" font-size="17" fill="#5b6577">-0.08</text>
+<line x1="870.0" y1="128" x2="870.0" y2="338" stroke="#dfe3ea" stroke-width="1.5"/>
+<text x="870.0" y="362" text-anchor="middle" font-size="17" fill="#5b6577">-0.04</text>
+<line x1="950.0" y1="128" x2="950.0" y2="338" stroke="#dfe3ea" stroke-width="1.5"/>
+<text x="950.0" y="362" text-anchor="middle" font-size="17" fill="#5b6577">0</text>
+<line x1="1030.0" y1="128" x2="1030.0" y2="338" stroke="#dfe3ea" stroke-width="1.5"/>
+<text x="1030.0" y="362" text-anchor="middle" font-size="17" fill="#5b6577">+0.04</text>
+<line x1="1110.0" y1="128" x2="1110.0" y2="338" stroke="#dfe3ea" stroke-width="1.5"/>
+<text x="1110.0" y="362" text-anchor="middle" font-size="17" fill="#5b6577">+0.08</text>
+<line x1="950.0" y1="128" x2="950.0" y2="338" stroke="#14213d" stroke-width="2.2" stroke-dasharray="6 5"/>
+<text x="958.0" y="144" font-size="17" fill="#5b6577">same as baseline</text>
+<text x="790.0" y="388" font-size="17" fill="#5b6577">worse</text>
+<text x="1110.0" y="388" text-anchor="end" font-size="17" fill="#5b6577">better</text>
+<text x="0" y="178" font-size="21" font-weight="600">S1</text>
+<text x="0" y="199" font-size="16" fill="#5b6577">refusal prob.</text>
+<line x1="314.1" y1="180" x2="360.5" y2="180" stroke="#2f6fde" stroke-width="5" stroke-linecap="round"/>
+<circle cx="337.8" cy="180" r="10" fill="#2f6fde" stroke="#fff" stroke-width="2.5"/>
+<text x="337.8" y="162" text-anchor="middle" font-size="19" font-weight="600">0.726</text>
+<text x="616" y="178" font-size="21" font-weight="600">S1</text>
+<text x="616" y="199" font-size="16" fill="#5b6577">bal. acc. 0.658</text>
+<line x1="836.0" y1="180" x2="940.0" y2="180" stroke="#2f6fde" stroke-width="5" stroke-linecap="round"/>
+<circle cx="888.0" cy="180" r="10" fill="#2f6fde" stroke="#fff" stroke-width="2.5"/>
+<text x="888.0" y="162" text-anchor="middle" font-size="19" font-weight="600">-0.031</text>
+<text x="0" y="243" font-size="21" font-weight="600">S2</text>
+<text x="0" y="264" font-size="16" fill="#5b6577">yes or no</text>
+<line x1="335.1" y1="245" x2="382.4" y2="245" stroke="#0f9d8a" stroke-width="5" stroke-linecap="round"/>
+<circle cx="359.6" cy="245" r="10" fill="#0f9d8a" stroke="#fff" stroke-width="2.5"/>
+<text x="359.6" y="227" text-anchor="middle" font-size="19" font-weight="600">0.751</text>
+<text x="616" y="243" font-size="21" font-weight="600">S2</text>
+<text x="616" y="264" font-size="16" fill="#5b6577">bal. acc. 0.669</text>
+<line x1="856.0" y1="245" x2="964.0" y2="245" stroke="#0f9d8a" stroke-width="5" stroke-linecap="round"/>
+<circle cx="910.0" cy="245" r="10" fill="#0f9d8a" stroke="#fff" stroke-width="2.5"/>
+<text x="910.0" y="227" text-anchor="middle" font-size="19" font-weight="600">-0.020</text>
+<text x="0" y="308" font-size="21" font-weight="600">S3</text>
+<text x="0" y="329" font-size="16" fill="#5b6577">probe</text>
+<line x1="376.2" y1="310" x2="424.4" y2="310" stroke="#b5541a" stroke-width="5" stroke-linecap="round"/>
+<circle cx="399.9" cy="310" r="10" fill="#b5541a" stroke="#fff" stroke-width="2.5"/>
+<text x="399.9" y="292" text-anchor="middle" font-size="19" font-weight="600">0.797</text>
+<text x="616" y="308" font-size="21" font-weight="600">S3</text>
+<text x="616" y="329" font-size="16" fill="#5b6577">bal. acc. 0.718</text>
+<line x1="922.0" y1="310" x2="1080.0" y2="310" stroke="#b5541a" stroke-width="5" stroke-linecap="round"/>
+<circle cx="1006.0" cy="310" r="10" fill="#b5541a" stroke="#fff" stroke-width="2.5"/>
+<text x="1006.0" y="292" text-anchor="middle" font-size="19" font-weight="600">+0.028</text>
+</svg>
+  <div class="neq" data-step="1" style="margin-top:2px"><span class="d">Decodable</span><span class="x">&ne;</span><span class="p">Deployable</span></div>
+  <div class="cols c3" data-step="2" style="gap:30px;margin-top:12px">
+    <div class="colrule"><h3>We can say</h3><ul><li>The model's scores and hidden states carry real information about when to refuse.</li><li>Asking it to diagnose first backfires.</li></ul></div>
+    <div class="colrule"><h3>We cannot say</h3><ul><li>That any rule beats the baseline (probe interval −0.014 to +0.065).</li><li>Why the model answers "clear", or that this holds for other models.</li></ul></div>
+    <div class="colrule"><h3>A full run needs</h3><ul><li>All 1,560 replies graded, and the 30-reply check of the judge.</li><li>More models, and the multi-document set.</li></ul></div>
+  </div>
+  <aside>About 2.25 minutes. This is the "result quality" part of the rubric: read the verdict out loud, do not oversell.
+Left (question A): all three readouts separate the cases far better than chance; their intervals start at 0.70 or higher. So the information is there. The pre-registered verdict is "signal but no gain": tuning S1's threshold does not beat its default (+0.015, interval -0.008 to +0.036).
+Right (question B): would using it make better decisions than the judged baseline (balanced accuracy 0.690) on the same 770 examples? S1's whole interval is below zero (slightly worse). S2 is unclear. The probe S3 has the best point estimate, +0.028, but its interval runs from -0.014 to +0.065, so we do not claim an improvement. With five comparisons and no correction, even S1's "worse" is not robust.
+Why a good AUROC does not give a better decision: AUROC measures ranking over every possible threshold; a deployed rule needs one operating point, and moving the threshold only trades one error for the other. In the trade-off picture the baseline sits close to the S1 and S2 curves and just above the probe's.
+Per type (same 770, missed / false refusal): contradiction baseline .71 / .17, S2 .23 / .50, probe .19 / .29; ambiguity baseline .74 / .09, probe .45 / .23; false premise baseline .19 / .33, probe .25 / .23. So the probe finds many more contradictions and ambiguities, but refuses more answerable questions.
+Hostile question: "Your baseline depends on an unvalidated Gemini judge for most replies, while your rules are scored against labels." Answer: treat the comparison as provisional; I compare on the same 770 examples with intervals that resample whole questions, I claim no winner, and grading the rest plus the 30-reply judge check are the two next steps.
+Click: the central finding in one line, decodable is not deployable. Click again: what we can say, cannot say, and what a full run needs. Then stop talking and invite questions.</aside>
+</section>
+
+<!-- ============================================================ 7 · REFERENCES -->
+<section class="slide" data-title="References">
+  <div class="eyebrow">References</div>
+  <ol class="refs gap">
+    <li><span>1</span>A. Muhamed, L. F. R. Ribeiro, M. Dreyer, V. Smith, M. T. Diab. <b>RefusalBench: Generative Evaluation of Selective Refusal in Grounded Language Models.</b> EACL 2026, pp. 6811–6856. arXiv:2510.10390.</li>
+    <li><span>2</span>J. Bai et al. <b>Qwen Technical Report.</b> arXiv:2309.16609, 2023.</li>
+    <li><span>3</span>Qwen Team. <b>Introducing Qwen1.5.</b> Qwen blog, 2024.</li>
+    <li><span>4</span>T. Kwiatkowski et al. <b>Natural Questions.</b> TACL 7:453–466, 2019.</li>
+    <li><span>5</span>P. Lewis et al. <b>Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks.</b> NeurIPS 2020.</li>
+    <li><span>6</span>P. Rajpurkar, R. Jia, P. Liang. <b>Know What You Don't Know: Unanswerable Questions for SQuAD.</b> ACL 2018.</li>
+    <li><span>7</span>S. Kadavath et al. <b>Language Models (Mostly) Know What They Know.</b> arXiv:2207.05221, 2022.</li>
+    <li><span>8</span>C. Burns, H. Ye, D. Klein, J. Steinhardt. <b>Discovering Latent Knowledge in Language Models Without Supervision.</b> ICLR 2023.</li>
+    <li><span>9</span>A. Azaria, T. Mitchell. <b>The Internal State of an LLM Knows When It's Lying.</b> arXiv:2304.13734, 2023.</li>
+    <li><span>10</span>G. Alain, Y. Bengio. <b>Understanding Intermediate Layers Using Linear Classifier Probes.</b> arXiv:1610.01644, 2016.</li>
+    <li><span>11</span>Y. Geifman, R. El-Yaniv. <b>Selective Classification for Deep Neural Networks.</b> arXiv:1705.08500, 2017.</li>
+    <li><span>12</span>C. Guo, G. Pleiss, Y. Sun, K. Q. Weinberger. <b>On Calibration of Modern Neural Networks.</b> ICML 2017.</li>
+    <li><span>13</span>T. Dettmers, A. Pagnoni, A. Holtzman, L. Zettlemoyer. <b>QLoRA: Efficient Finetuning of Quantized LLMs.</b> arXiv:2305.14314, 2023.</li>
+    <li><span>14</span>T. Wolf et al. <b>Transformers: State-of-the-Art Natural Language Processing.</b> EMNLP System Demonstrations, 2020.</li>
+    <li><span>15</span>L. Zheng et al. <b>Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena.</b> NeurIPS Datasets and Benchmarks, 2023.</li>
+    <li><span>16</span>A. C. Cameron, J. B. Gelbach, D. L. Miller. <b>Bootstrap-Based Improvements for Inference with Clustered Errors.</b> Review of Economics and Statistics 90(3), 2008.</li>
+    <li><span>17</span>B. Efron, R. J. Tibshirani. <b>An Introduction to the Bootstrap.</b> Chapman &amp; Hall, 1993.</li>
+    <li><span>18</span>Z. Yin et al. <b>Do Large Language Models Know What They Don't Know?</b> Findings of ACL 2023.</li>
+    <li><span>19</span>H. Zhang et al. <b>R-Tuning: Instructing Large Language Models to Say 'I Don't Know'.</b> NAACL 2024.</li>
+    <li><span>20</span>A. Asai, Z. Wu, Y. Wang, A. Sil, H. Hajishirzi. <b>Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection.</b> arXiv:2310.11511, 2023.</li>
+    <li><span>21</span>J. Xie et al. <b>HopRefusalBench: Diagnosing Refusal Failures in Search-Augmented Agents for Multi-Hop Reasoning.</b> arXiv:2608.01358, 2026.</li>
+  </ol>
+  <p class="xs muted" style="margin-top:auto"><b style="color:var(--ink)">Code, data, report and every number on these slides:</b> github.com/MohamadJomaa/refusalbench (report/REPORT.md; each number is recomputed by the tests).</p>
+  <aside>Leave this up during questions. These are the 21 references of the report, report/REPORT.md.</aside>
+</section>
+
+</div></div>
+<div id="help">Arrow keys or space to move · N notes · F fullscreen</div>
+<div id="hud"><span id="count"></span><button id="prev" type="button">Back</button><button id="next" type="button">Next</button></div>
+<div id="notes"></div>
+
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var stage = document.getElementById('stage');
+  var parts = ['The paper', 'Extension 1', 'Extension 2'];
+  var cur = 0, step = 0;
+
+  // part indicator on every content slide
+  slides.forEach(function (s) {
+    if (s.dataset.part === undefined) return;
+    var d = document.createElement('div');
+    d.className = 'part';
+    d.innerHTML = parts.map(function (p, i) {
+      return '<span' + (String(i) === s.dataset.part ? ' class="on"' : '') + '>' + p + '</span>';
+    }).join('');
+    s.appendChild(d);
+  });
+
+  function maxStep(s) {
+    var m = 0;
+    s.querySelectorAll('[data-step]').forEach(function (e) { m = Math.max(m, +e.dataset.step); });
+    return m;
+  }
+  function render() {
+    slides.forEach(function (s, i) { s.classList.toggle('active', i === cur); });
+    slides[cur].querySelectorAll('[data-step]').forEach(function (e) {
+      e.classList.toggle('hidden', +e.dataset.step > step);
+    });
+    document.getElementById('bar').style.width = ((cur + 1) / slides.length * 100) + '%';
+    document.getElementById('count').textContent = (cur + 1) + ' / ' + slides.length;
+    var a = slides[cur].querySelector('aside');
+    document.getElementById('notes').textContent = a ? a.textContent.trim() : '';
+    try { history.replaceState(null, '', '#' + (cur + 1)); } catch (e) {}
+  }
+  function next() {
+    if (step < maxStep(slides[cur])) { step++; }
+    else if (cur < slides.length - 1) { cur++; step = 0; }
+    render();
+  }
+  function prev() {
+    if (step > 0) { step--; }
+    else if (cur > 0) { cur--; step = maxStep(slides[cur]); }
+    render();
+  }
+  function fit() {
+    var k = Math.min(window.innerWidth / 1280, window.innerHeight / 720) * 0.96;
+    stage.style.transform = 'scale(' + k + ')';
+  }
+  document.addEventListener('keydown', function (e) {
+    if (['ArrowRight', 'PageDown', ' ', 'Enter'].indexOf(e.key) >= 0) { e.preventDefault(); next(); }
+    else if (['ArrowLeft', 'PageUp', 'Backspace'].indexOf(e.key) >= 0) { e.preventDefault(); prev(); }
+    else if (e.key === 'Home') { cur = 0; step = 0; render(); }
+    else if (e.key === 'End') { cur = slides.length - 1; step = maxStep(slides[cur]); render(); }
+    else if (e.key === 'n' || e.key === 'N') { document.getElementById('notes').classList.toggle('on'); }
+    else if (e.key === 'f' || e.key === 'F') {
+      if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen();
+    }
+  });
+  document.getElementById('next').onclick = next;
+  document.getElementById('prev').onclick = prev;
+  stage.addEventListener('click', function (e) { if (!e.target.closest('a')) next(); });
+  window.addEventListener('resize', fit);
+  var h = parseInt((location.hash || '').slice(1), 10);
+  if (h >= 1 && h <= slides.length) cur = h - 1;
+  fit(); render();
+})();
+</script>
+</body>
+</html>
