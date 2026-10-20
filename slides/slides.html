@@ -131,6 +131,42 @@ i.ar::after{content:"";position:absolute;right:-1px;top:-5px;border:6px solid tr
 .refs li{font-size:15.4px;line-height:1.36;margin:0 0 9px;break-inside:avoid;padding-left:24px;text-indent:-24px}
 .refs li span{display:inline-block;width:24px;text-indent:0;color:var(--muted)}
 
+/* ===== per-slide sizing: each slide's content fills its height ===== */
+.chip.hl{background:#fde3cf;border-color:var(--rust);font-weight:500}
+[data-title="The paper: problem"] .bx{font-size:22.5px!important;padding:16px 20px!important}
+[data-title="The paper: problem"] .chips{margin-top:4px}
+[data-title="The paper: problem"] > .role{margin-top:34px}
+[data-title="The paper: problem"] p.sm.gap2{margin-top:34px}
+[data-title="The paper: problem"] p.sm{font-size:19px}
+[data-title="The paper: solution"] .flow > .bx{min-height:124px;padding:14px 15px;display:flex;flex-direction:column;justify-content:center}
+[data-title="The paper: solution"] .flow > .bx b{font-size:21px}
+[data-title="The paper: solution"] .flow .bx small{font-size:16.5px}
+[data-title="The paper: solution"] .split2 .bx b{font-size:20px}
+[data-title="The paper: solution"] .split2 .bx{min-height:0;padding:10px 13px}
+[data-title="The paper: solution"] .sbar{height:46px;font-size:18px;line-height:46px}
+[data-title="The paper: solution"] > .role{margin-top:40px}
+[data-title="Results and our reproduction"] .stat.sm .n{font-size:36px}
+[data-title="Results and our reproduction"] .stat .t{font-size:17px}
+[data-title="Results and our reproduction"] .stack{gap:16px}
+[data-title="Results and our reproduction"] .note{margin-top:24px;font-size:18px}
+[data-title="Extension 1"] .hyp{font-size:22px;padding:12px 16px}
+[data-title="Extension 1"] .prompt{font-size:19px;padding:10px 14px}
+[data-title="Extension 1"] .stack{gap:14px}
+[data-title="Extension 1"] .bignum{font-size:88px}
+[data-title="Extension 1"] .mini{font-size:19px;margin:11px 0}
+[data-title="Extension 1"] .track{height:26px}
+[data-title="Extension 2: method"] .hyp{font-size:20.5px;padding:12px 16px}
+[data-title="Extension 2: method"] .flow .bx{padding:14px 15px}
+[data-title="Extension 2: method"] .split2{gap:9px}
+[data-title="Extension 2: method"] .split2 .bx{padding:11px 13px}
+[data-title="Extension 2: method"] .split2 .bx small{font-size:16px}
+[data-title="Extension 2: method"] .cols{margin-top:50px}
+[data-title="Extension 2: method"] .fold{padding:17px 0;font-size:17px}
+[data-title="Extension 2: method"] .flow{margin-top:30px}
+[data-title="Extension 2: method"] ul.sm li{font-size:20px}
+[data-title="Extension 2: results"] .colrule li{font-size:17px}
+[data-title="References"] .refs li{font-size:15.9px;margin-bottom:9px}
+
 /* ===== notes and step reveals ===== */
 aside{display:none}
 [data-step]{transition:opacity .25s}
@@ -188,8 +224,8 @@ Three parts, shown at the top right of every slide: the paper, extension 1, exte
   </div>
   <div class="role gap2">SIX REASONS TO REFUSE, EACH WITH ITS OWN REFUSAL CODE</div>
   <div class="chips">
-    <span class="chip">Ambiguity</span><span class="chip">Contradiction</span><span class="chip">Missing information</span>
-    <span class="chip">False premise</span><span class="chip">Granularity mismatch</span><span class="chip">Epistemic mismatch</span>
+    <span class="chip hl">Ambiguity</span><span class="chip hl">Contradiction</span><span class="chip hl">Missing information</span>
+    <span class="chip hl">False premise</span><span class="chip hl">Granularity mismatch</span><span class="chip hl">Epistemic mismatch</span>
   </div>
   <p class="sm gap2 muted">Why it matters: the paper reports models refusing over 60% of answerable queries, or answering confidently despite critical defects. And a static test set is easy to memorize, so the paper <b style="color:var(--ink)">generates</b> its test cases instead.</p>
   <aside>About 1.5 minutes. Define the two terms out loud: grounded, and selective refusal. The example is Figure 1 of the paper: one sentence added to the passage turns an answerable question into one the model must refuse.
@@ -243,7 +279,7 @@ Likely question: "Who judges the judge?" In the paper an expert checked the benc
     </div>
     <div class="stack" data-step="1">
       <div class="role">OUR REPRODUCTION · QWEN1.5-7B-CHAT · T4 · 4-BIT · GEMINI JUDGE</div>
-      <svg width="530" height="250" viewBox="0 0 520 300" role="img" aria-label="Answer accuracy and refusal accuracy, paper versus ours.">
+      <svg width="560" height="300" viewBox="0 0 520 300" role="img" aria-label="Answer accuracy and refusal accuracy, paper versus ours.">
 <rect x="0" y="6" width="16" height="16" rx="3" fill="#9aa3b2"/><text x="24" y="20" font-size="19">Paper</text>
 <rect x="112" y="6" width="16" height="16" rx="3" fill="#2f6fde"/><text x="136" y="20" font-size="19">Ours</text>
 <line x1="40" y1="250" x2="500" y2="250" stroke="#14213d" stroke-width="2"/>
@@ -345,7 +381,7 @@ Scoring takes about 0.3 seconds per example on a T4. Likely question: "Where is 
 <section class="slide" data-title="Extension 2: results" data-part="2">
   <div class="eyebrow">Extension 2 · Results and conclusion</div>
   <h2>The signal exists; a better decision than the baseline is not shown</h2>
-  <svg width="1136" height="318" viewBox="0 70 1136 340" role="img" aria-label="Left: AUROC of the three readouts with 95 percent intervals, all above chance. Right: difference in balanced accuracy versus the baseline; only S1 excludes zero, and it is worse; the probe interval crosses zero.">
+  <svg width="1136" height="338" viewBox="0 70 1136 340" role="img" aria-label="Left: AUROC of the three readouts with 95 percent intervals, all above chance. Right: difference in balanced accuracy versus the baseline; only S1 excludes zero, and it is worse; the probe interval crosses zero.">
 <text x="0" y="90" font-size="22" font-weight="600">A. Is there information inside the model?</text>
 <text x="0" y="114" font-size="17" fill="#5b6577">AUROC, 95% interval (1,600 examples): 0.5 is chance</text>
 <text x="616" y="90" font-size="22" font-weight="600">B. Does using it beat the baseline?</text>
