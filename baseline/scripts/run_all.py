@@ -40,6 +40,9 @@ from baseline.refusalbench_repro.runner import (  # noqa: E402
 
 
 
+LEGACY_PROMPT_HASH = "c0008c7504b3"  # what every run folder recorded before the prompt-hash fix
+
+
 def load_target_checked(target_cfg, log):
     """Refuse to load the model if something else already holds the GPU (for example an older run that is
     still alive after a cell was stopped). Two copies of the model compete for memory and cause out-of-memory errors."""
@@ -125,7 +128,16 @@ def main():
         lock["condition"], lock["subset_file"] = condition, subset_file
     lock_path = os.path.join(run_dir, "config.json")
     if os.path.exists(lock_path):
-        if json.load(open(lock_path, encoding="utf-8")) != lock:
+        saved = json.load(open(lock_path, encoding="utf-8"))
+        # Run folders started before the prompt-hash fix recorded the BASELINE template's hash for every
+        # condition. Accept exactly that case (everything else equal), so those finished runs can still be
+        # judged or re-scored; any other difference is refused as before.
+        legacy = (condition != "baseline" and saved.get("prompt_hash") == LEGACY_PROMPT_HASH
+                  and {**saved, "prompt_hash": lock["prompt_hash"]} == lock)
+        if legacy:
+            log(f"note: this run folder predates the prompt-hash fix (recorded {LEGACY_PROMPT_HASH}, the baseline "
+                f"template's hash; the {condition} prompt hashes to {lock['prompt_hash']}). Accepted.")
+        elif saved != lock:
             raise SystemExit("This run folder was started with different settings. Change run_name to start fresh.")
     else:
         json.dump(lock, open(lock_path, "w", encoding="utf-8"), indent=2)
