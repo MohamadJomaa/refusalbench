@@ -8,7 +8,7 @@ RefusalBench tests whether a grounded language model knows when to refuse becaus
 
 ## What we ask you to approve
 
-1. Novelty 2 (reading the refusal probability and a hidden-state probe) as our extension, with the failed prompt-based attempt reported as motivation.
+1. Extension 2 (reading the refusal probability and a hidden-state probe) as our extension, with the failed prompt-based attempt reported as motivation.
 2. That we frame the claim narrowly: better *detection* of when to refuse (answer vs refuse), not better *explanation* of why.
 
 ## Related work to cite and position against (verify each before submission)
@@ -22,5 +22,5 @@ How we differ: we apply the probe and threshold idea to grounded selective refus
 ## Honest status
 
 - Baseline: reproduced for Qwen1.5-7B-Chat; replies generated for 1,560 of 1,600 examples; 770 of them graded so far (random sample), the rest in progress (free Gemini quota).
-- Novelty 1: done, negative result.
-- Novelty 2: pilot run done on all 1,600 examples. First fair comparison against the judged baseline (770 graded replies): the probe is +0.028 [-0.014, +0.065] in balanced accuracy, no clear difference yet; the label-free threshold rules do not beat the baseline. The comparison will be repeated when grading is complete. We do not claim an improvement before that.
+- Extension 1: done, negative result.
+- Extension 2: pilot run done on all 1,600 examples. First fair comparison against the judged baseline (770 graded replies): the probe is +0.028 [-0.014, +0.065] in balanced accuracy, no clear difference yet; the label-free threshold rules do not beat the baseline. The comparison will be repeated when grading is complete. We do not claim an improvement before that.

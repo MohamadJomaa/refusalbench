@@ -129,7 +129,7 @@ reading the signal**: if the model's written diagnosis cannot be trusted, read w
 it writes. The pitch for the switch, and for a narrower claim (better detection of **when** to refuse,
 not of **why**), is `extension/ext2_reading_signals/PITCH.md`.
 
-> **To fill in before submission:** the link to the idea-pitch issue (Issue #1) and the date of the
+> **To fill in before submission:** the link to the idea-pitch issue on GitHub and the date of the
 > instructor's approval of each pitch.
 
 ### 2.2 Method
