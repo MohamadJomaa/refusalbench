@@ -1,31 +1,63 @@
 # Slides
 
-The Module 6 defense-day deck. Build it wherever your team prefers
-(Google Slides, PowerPoint, Keynote, a Slides artifact) and either commit
-an exported file here (`slides.pdf` or `slides.pptx`) or leave a link to
-it in this file, whichever your instructor asks for.
+The Module 6 defense deck: **8 slides**, the course's hard limit (a cover, 6
+content slides, references).
 
-## Required structure, no more and no less
+| File | What it is |
+|---|---|
+| `slides.pdf` | The deck as handed in: 8 pages, every step shown |
+| `slides.html` | The same deck to present from: one self-contained file, opens in any browser, with click-through steps and the speaker notes |
 
-- **Cover slide.** Team name, paper, topic.
-- **Content slides, no more than 6.** In order:
-  1. to 3. The baseline paper's problem, solution, and results.
-  4. to 6. Your extension's idea and results.
-- **References slide.** Full citations for the baseline and any
-  related-work cited in the report.
+## Required structure, and where each part is
 
-That is 8 slides total at most (cover, up to 6 content, references), not
-a suggestion, the hard cap from the course's own rubric. Fewer content
-slides is fine if the material fits; more is not.
+| # | Slide | Template requirement | Time |
+|---|---|---|---|
+| — | Cover | Team name, paper, topic | 0.5 min |
+| 1 | The paper: problem | Baseline paper's problem | 1.5 min |
+| 2 | The paper: solution | Baseline paper's solution | 2 min |
+| 3 | The paper: results, and our reproduction | Baseline paper's results, with our number next to the paper's | 2 min |
+| 4 | Extension 1: diagnose first (failed), and the turning point | Extension idea and result | 2 min |
+| 5 | Extension 2: method | Extension idea | 1.75 min |
+| 6 | Extension 2: results and conclusion | Extension result | 2.25 min |
+| — | References | Full citations for the paper and the related work in the report | during questions |
 
-## What belongs on the content slides
+Total: about 12 minutes. The numbers on the slides are the ones in
+`report/REPORT.md`, and the tests recompute each of them from the committed
+run files.
 
-The same substance as `report/REPORT.md`'s sections 1 through 3,
-compressed to what a room can absorb from a slide plus 12 minutes of
-talking, not the report's own prose pasted in smaller text. Numbers from
-your results comparison belong here; long method descriptions do not.
+## Presenting from the HTML
+
+Open `slides.html` in a browser.
+
+| Key | Action |
+|---|---|
+| → or Space | next step, then next slide |
+| ← | back |
+| N | speaker notes (timing, what to say, likely questions) |
+| F | full screen |
+
+Fonts come from Google Fonts when online; offline, the deck falls back to
+installed fonts.
+
+## How the PDF is made
+
+From the repository root, with Playwright's Chromium:
+
+```
+python -c "from playwright.sync_api import sync_playwright as s; p=s().start(); b=p.chromium.launch(); pg=b.new_page(); pg.goto('file://'+__import__('os').path.abspath('slides/slides.html')); pg.emulate_media(media='print'); pg.pdf(path='slides/slides.pdf', width='1280px', height='720px', print_background=True); b.close(); p.stop()"
+```
+
+The print styles put one slide on each page and show every step.
+
+## History
+
+The first version of the deck had 12 slides (10 content slides). It was cut
+to 8 to meet the limit: the paper's findings and our reproduction share
+slide 3, the turning point closes slide 4, and the conclusion closes slide 6.
+The text, the charts and the speaker notes are the original deck's,
+shortened where two slides were merged.
 
 ## Before Module 6
 
-Submit this deck (or its link) to the instructor before Module 6, not
-walked in with on the day, the same deadline as the report.
+Submit `slides.pdf` (or a link to this folder) to the instructor before
+Module 6, with the report. Not on the day.
