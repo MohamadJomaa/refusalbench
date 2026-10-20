@@ -49,15 +49,3 @@ python -c "from playwright.sync_api import sync_playwright as s; p=s().start(); 
 
 The print styles put one slide on each page and show every step.
 
-## History
-
-The first version of the deck had 12 slides (10 content slides). It was cut
-to 8 to meet the limit: the paper's findings and our reproduction share
-slide 3, the turning point closes slide 4, and the conclusion closes slide 6.
-The text, the charts and the speaker notes are the original deck's,
-shortened where two slides were merged.
-
-## Before Module 6
-
-Submit `slides.pdf` (or a link to this folder) to the instructor before
-Module 6, with the report. Not on the day.
