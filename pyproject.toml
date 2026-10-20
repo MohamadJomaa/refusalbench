@@ -1,0 +1,4 @@
+[tool.pytest.ini_options]
+# Makes imports resolve from the repository root regardless of how pytest
+# is invoked (bare "pytest", "python -m pytest", or from an IDE).
+pythonpath = ["."]

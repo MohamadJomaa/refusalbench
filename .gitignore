@@ -1,0 +1,29 @@
+# Secrets, never commit these
+.env
+*.key
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local data and scratch
+data/*
+!data/README.md
+*.db
+*.sqlite3
+
+# OS and editor
+.DS_Store
+.vscode/
+.idea/
+
+# Claude and other agent local files: never commit
+.claude/
+CLAUDE.md
+CLAUDE.local.md
