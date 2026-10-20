@@ -1,0 +1,236 @@
+"""ONE CLICK: run the whole baseline. Safe to stop and re-run: it resumes where it left off.
+
+Order: load data -> generate 10 -> check -> generate 100 -> check -> generate the rest (1,600 total)
+       -> judge (parse first) -> metrics -> report -> hand-check sheet.
+
+Usage, from the repository root (the Colab notebook does this for you):
+    python baseline/scripts/run_all.py --out /content/drive/MyDrive/refusalbench-results
+Test without a GPU or an API key:
+    python baseline/scripts/run_all.py --fake --dev-subset 20
+"""
+
+import os
+
+# less GPU memory fragmentation (must be set before torch is imported)
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+
+import argparse
+import copy
+import hashlib
+import json
+import os
+import sys
+import time
+from collections import Counter
+from pathlib import Path
+
+import yaml
+
+REPO_ROOT = str(Path(__file__).resolve().parents[2])  # baseline/scripts/run_all.py -> repository root
+sys.path.insert(0, REPO_ROOT)
+
+from baseline.refusalbench_repro.conditions import build_prompt_for, extract_effective  # noqa: E402
+from baseline.refusalbench_repro.dataset_loader import (  # noqa: E402
+    load_refusalbench_nq, load_sample_by_ids, select_smoke_sample)
+from baseline.refusalbench_repro.model_client import make_judge, make_target  # noqa: E402
+from baseline.refusalbench_repro.parser import parse_reply  # noqa: E402
+from baseline.refusalbench_repro.report import write_all  # noqa: E402
+from baseline.refusalbench_repro.runner import (  # noqa: E402
+    now, prompt_hash, read_jsonl, run_generation, run_judging)
+
+
+
+def load_target_checked(target_cfg, log):
+    """Refuse to load the model if something else already holds the GPU (for example an older run that is
+    still alive after a cell was stopped). Two copies of the model compete for memory and cause out-of-memory errors."""
+    try:
+        import torch
+
+        free, total = torch.cuda.mem_get_info()
+        used = int((total - free) / 2**20)
+        log(f"GPU memory in use before loading the model: {used} MiB of {int(total / 2**20)} MiB")
+        if used > 2000:
+            raise SystemExit(
+                f"STOPPED: {used} MiB of the GPU is already in use by another process (probably an older run that is "
+                "still alive). In Colab: Runtime > Disconnect and delete runtime, reconnect, and run again. "
+                "Progress on Drive is kept.")
+    except (ImportError, RuntimeError, AssertionError):
+        pass  # no GPU / no CUDA here (for example local tests), nothing to check
+    return make_target(target_cfg)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--config", default="baseline/configs/qwen15_7b_baseline.yaml",
+                    help="the baseline config, or an extension's own config (extension/<name>/configs/*.yaml)")
+    ap.add_argument("--out", default="runs", help="base folder; the run lives in <out>/<run_name> (runs/ is gitignored)")
+    ap.add_argument("--fake", action="store_true", help="TEST ONLY: fake target and judge, no GPU, no API")
+    ap.add_argument("--dev-subset", type=int, default=0, help="TEST ONLY: use a small stratified subset")
+    ap.add_argument("--skip-judge", action="store_true")
+    ap.add_argument("--accept-partial", action="store_true",
+                    help="skip generation, score the replies that exist and document the missing examples")
+    ap.add_argument("--subset-file", default=None, help="JSON with an ids list, e.g. data/novelty_sample_ids.json")
+    args = ap.parse_args()
+
+    cfg = yaml.safe_load(open(args.config, encoding="utf-8"))
+    if args.fake:
+        cfg = copy.deepcopy(cfg)
+        cfg["target"]["provider"], cfg["judge"]["provider"] = "fake", "fake"
+        cfg["run_name"] += "_FAKE_TEST"
+    condition = cfg["target"].get("condition", "baseline")
+    if cfg.get("experiment_dir"):
+        from baseline.refusalbench_repro.conditions import load_experiment
+
+        load_experiment(cfg["experiment_dir"], REPO_ROOT)
+    subset_file = args.subset_file or cfg.get("subset_file")
+    run_dir = os.path.join(args.out, cfg["run_name"])
+    os.makedirs(run_dir, exist_ok=True)
+    log_path = os.path.join(run_dir, "run.log")
+
+    def log(msg):
+        print(msg, flush=True)
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(f"{now()}  {msg}\n")
+
+    log(f"=== RefusalBench baseline | run folder: {run_dir}")
+
+    # ---- 1. dataset (never modified, never filtered)
+    examples = load_refusalbench_nq()
+    n_ans = sum(e["is_answerable"] for e in examples)
+    manifest = {"source": "aashiqmuhamed/RefusalBench-NQ (test)", "n": len(examples), "answerable": n_ans,
+                "refusal_required": len(examples) - n_ans,
+                "by_uncertainty_type": dict(Counter(e["uncertainty_type"] for e in examples)),
+                "by_intensity": dict(Counter(e["intensity"] for e in examples))}
+    if subset_file:
+        examples = load_sample_by_ids(examples, Path(os.path.join(REPO_ROOT, subset_file)
+                                                     if not os.path.isabs(subset_file) else subset_file))
+        manifest["subset_file"], manifest["subset_n"] = subset_file, len(examples)
+        log(f"condition {condition!r} on the subset {subset_file}: {len(examples)} examples")
+    if args.dev_subset:
+        log(f"!!! DEV SUBSET of {args.dev_subset}: for testing only, not a real run")
+        examples = select_smoke_sample(examples, n=args.dev_subset, seed=0)
+    elif not subset_file and (manifest["n"], n_ans) != (1600, 536):
+        raise SystemExit(f"Dataset is not the expected 1,600 / 536 answerable: {manifest}")
+    with open(os.path.join(run_dir, "dataset_manifest.json"), "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2)
+    log(f"dataset OK: {manifest['n']} examples, {n_ans} answerable, {manifest['refusal_required']} refusal-required")
+
+    # ---- 2. config lock: refuse to mix settings inside one run folder
+    lock = {"target": {k: cfg["target"][k] for k in ("provider", "model", "precision", "temperature",
+                                                     "top_p", "max_new_tokens", "seed")},
+            "prompt_hash": prompt_hash(condition), "dev_subset": args.dev_subset}
+    if condition != "baseline":  # keeps the baseline lock byte-identical so its run can resume
+        lock["condition"], lock["subset_file"] = condition, subset_file
+    lock_path = os.path.join(run_dir, "config.json")
+    if os.path.exists(lock_path):
+        if json.load(open(lock_path, encoding="utf-8")) != lock:
+            raise SystemExit("This run folder was started with different settings. Change run_name to start fresh.")
+    else:
+        json.dump(lock, open(lock_path, "w", encoding="utf-8"), indent=2)
+    with open(os.path.join(run_dir, "config_full.yaml"), "w", encoding="utf-8") as f:
+        yaml.safe_dump(cfg, f)
+
+    out_path = os.path.join(run_dir, "target_outputs.jsonl")
+    err_path = os.path.join(run_dir, "errors.jsonl")
+    by_id = {e["id"]: e for e in examples}
+
+    # ---- 3. nested stages: 10 -> 100 -> everything
+    sample_pool = list(examples) if (args.dev_subset or subset_file) else load_refusalbench_nq()
+    cumulative, ordered_ids = [], []
+    for size in cfg["stages"]:
+        for e in select_smoke_sample(sample_pool, n=min(size, len(sample_pool)), seed=0):
+            if e["id"] in by_id and e["id"] not in ordered_ids:
+                ordered_ids.append(e["id"])
+        cumulative.append(list(ordered_ids))
+    rest = sorted(i for i in by_id if i not in set(ordered_ids))
+    cumulative.append(ordered_ids + rest)
+    labels = [f"stage {s}" for s in cfg["stages"]] + ["all remaining"]
+
+    client = None
+    for label, ids in ([] if args.accept_partial else zip(labels, cumulative)):
+        have = {r["example_id"] for r in read_jsonl(out_path)}
+        todo = [i for i in ids if i not in have]
+        if todo and client is None:
+            log(f"loading the target model {cfg['target']['model']} ({cfg['target']['precision']}) ...")
+            client = load_target_checked(cfg["target"], log)
+        log(f"--- {label}: {len(ids)} examples, {len(todo)} still to generate")
+        stats = run_generation([by_id[i] for i in ids], client, out_path, err_path, cfg["target"], log,
+                               prompt_fn=lambda e: build_prompt_for(condition, e))
+        rows = [r for r in read_jsonl(out_path) if r["example_id"] in set(ids)]
+
+        # automatic checks (no human needed)
+        ok_rate = len(rows) / len(ids)
+        eff = lambda r: extract_effective(condition, r["raw_response"])["effective"]  # noqa: E731
+        empty_rate = sum(1 for r in rows if parse_reply(eff(r))[0] == "empty") / max(1, len(rows))
+        clean_rate = sum(1 for r in rows if parse_reply(eff(r))[0] == "clean_code") / max(1, len(rows))
+        log(f"    check: {len(rows)}/{len(ids)} ok ({ok_rate:.0%}), empty replies {empty_rate:.0%}, "
+            f"clean REFUSE_* code {clean_rate:.0%}")
+        if ok_rate < 0.8 or empty_rate > 0.3:
+            raise SystemExit("STOPPED by automatic check: too many failed or empty replies. "
+                             f"See {err_path} and {out_path}. Progress is saved.")
+        if label == labels[0]:
+            for r in rows[:3]:
+                log(f"    sample reply ({r['expected_behavior']}): {r['raw_response'][:150]!r}")
+        if stats["sec_per_example"]:
+            eta = stats["sec_per_example"] * (len(by_id) - len(read_jsonl(out_path))) / 60
+            log(f"    speed {stats['sec_per_example']:.1f}s per example, about {eta:.0f} min left for the rest")
+
+    # catch-up passes for examples that failed (for example a GPU out-of-memory), then verify completeness
+    for attempt in (() if args.accept_partial else (1, 2)):
+        have = {r["example_id"] for r in read_jsonl(out_path)}
+        missing = [i for i in by_id if i not in have]
+        if not missing:
+            break
+        log(f"--- catch-up pass {attempt}: {len(missing)} examples are still missing, retrying them")
+        if client is None:
+            client = load_target_checked(cfg["target"], log)
+        run_generation([by_id[i] for i in missing], client, out_path, err_path, cfg["target"], log,
+                       prompt_fn=lambda e: build_prompt_for(condition, e))
+
+    target_rows = read_jsonl(out_path)
+    ids_done = {r["example_id"] for r in target_rows}
+    if len(ids_done) != len(target_rows):
+        raise SystemExit("target_outputs.jsonl contains duplicate IDs, this should never happen. Stopping.")
+    missing_ids = sorted(set(by_id) - ids_done)
+    if missing_ids and args.accept_partial:
+        log(f"ACCEPTING PARTIAL DATA: {len(ids_done)} of {len(by_id)} examples; "
+            f"{len(missing_ids)} failed with out-of-memory and are excluded (documented in the report)")
+    elif missing_ids:
+        raise SystemExit(f"{len(by_id) - len(ids_done)} examples still failed after the catch-up passes "
+                         f"(see {err_path}). Progress is saved: run this cell again to retry them.")
+    log(f"generation complete: {len(ids_done)} unique IDs, no duplicates"
+        + (f", {len(missing_ids)} missing (excluded)" if missing_ids else ", no gaps"))
+
+    # ---- 4. judge (parse first)
+    judged_path = os.path.join(run_dir, "judged_outputs.jsonl")
+    judge_stats = {"parser": 0, "judge": 0}
+    if args.skip_judge:
+        log("judge skipped (--skip-judge)")
+    else:
+        try:
+            judge = make_judge(cfg["judge"])
+        except RuntimeError as e:
+            judge = None
+            log(f"judge NOT run: {e}. Add the key (.env: GOOGLE_API_KEY; Colab: Secrets, name GEMINI_API_KEY) and run this cell again; "
+                "generation will not be repeated.")
+        if judge:
+            log("--- judging (clean REFUSE_* replies scored by code, the rest by the judge)")
+            judge_stats = run_judging(target_rows, judge, cfg["judge"], judged_path, log, condition=condition)
+            log(f"    judge stats: {judge_stats}")
+
+    # ---- 5. metrics, report, hand-check sheet
+    judged_rows = read_jsonl(judged_path)
+    out, assessment = write_all(run_dir, cfg, target_rows, judged_rows, [], judge_stats, condition=condition,
+                                missing_ids=missing_ids, examples_by_id=by_id)
+    o = out["overall"]
+    log("=== DONE")
+    log(f"scored {o['n_scored']}/{len(target_rows)} | answer acc {o['answer_accuracy']} | "
+        f"refusal acc {o['refusal_accuracy']} | false refusal {o['false_refusal_rate']} | "
+        f"missed refusal {o['missed_refusal_rate']}")
+    log(f"assessment (provisional): {assessment}")
+    log(f"report: {os.path.join(run_dir, 'reproduction_report.md')}")
+    log(f"to validate the judge, fill in {os.path.join(run_dir, 'handcheck_sheet.csv')} (about 30 rows)")
+
+
+if __name__ == "__main__":
+    main()
