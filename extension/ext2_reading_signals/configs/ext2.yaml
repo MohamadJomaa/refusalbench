@@ -1,0 +1,25 @@
+# Extension 2: confidence-threshold refusal gate. Judge-free, no text generation.
+# All 1,600 RefusalBench-NQ examples get two forward passes (S1 baseline prompt, S2 yes/no prompt).
+run_name: novelty2_confidence_threshold
+subset_file: data/novelty_sample_ids.json   # the 800 Extension 1 examples, also reported as a subset of the 1,600
+
+target:
+  provider: hf
+  model: Qwen/Qwen1.5-7B-Chat
+  precision: 4bit
+  seed: 0
+  batch_size: 8          # halves automatically on CUDA out-of-memory
+
+scoring:
+  shard_size: 64         # one file per 64 examples on Drive, so a disconnect loses at most 64 examples
+  s1_mode: variants      # "variants" (all wrapper forms) or "first_token"; a pre-flight check may switch to first_token
+
+analysis:
+  folds: 5               # cross-fitting folds over the ~100 source questions
+  seed: 0
+  bootstrap: 2000
+  criterion: balanced_accuracy   # how thresholds are chosen on training folds: balanced_accuracy | f1 | frr_cap
+  c_grid: [0.001, 0.01, 0.1]     # probe regularisation, chosen by inner grouped CV
+  pca_components: 128
+
+baseline_dir: null       # optional: a baseline run folder with target_outputs.jsonl, for the reference line

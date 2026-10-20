@@ -3,12 +3,18 @@
 Our own work on top of the baseline in `baseline/`. Nothing here changes the
 baseline: both extensions call into `baseline/refusalbench_repro/` (the
 diagnose-first prompts plug into the baseline runner through the `conditions.py`
-hook), and the baseline never imports extension code.
+hook; Extension 2 reuses the paper's prompt, the loader and the metrics), and
+the baseline never imports extension code.
+
+**Our finding in one line: decodable is not deployable.** Asking the model to
+diagnose the evidence backfires (Extension 1); the information about when to
+refuse is inside the model (Extension 2), but turning it into a clearly better
+decision than the model's own is not shown.
 
 | Folder | Idea | Result |
 |---|---|---|
 | [`ext1_diagnose_first/`](ext1_diagnose_first/README.md) | Ask the model to name what is wrong with the evidence before it answers | **Failed**: it wrote CLEAR on 762 of 800 and caught 1.9% of the needed refusals (baseline 43.3%) |
-| `ext2_reading_signals/` | Do not ask the model: read its refusal probability, a yes/no probability, and a probe on its hidden state | Added in the next pull request |
+| [`ext2_reading_signals/`](ext2_reading_signals/README.md) | Do not ask the model: read its refusal probability, a yes/no probability, and a probe on its hidden state | **Signal, no proven gain**: AUROC 0.73 to 0.80, but the best rule (the probe) is +0.028 balanced accuracy over the baseline, interval [-0.014, +0.065] |
 
 ## The limitation both extensions target
 
