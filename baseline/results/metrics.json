@@ -8,10 +8,10 @@
     "refusal_accuracy": 0.11394891944990176,
     "false_refusal_rate": 0.16475095785440613,
     "missed_refusal_rate": 0.45579567779960706,
-    "overall_refusal_rate_on_unanswerable": 0.5402750491159135,
-    "refusal_detection_precision": 0.8647798742138365,
-    "refusal_detection_recall": 0.5402750491159135,
-    "refusal_detection_f1": 0.6650544135429263,
+    "overall_refusal_rate_on_unanswerable": 0.5442043222003929,
+    "refusal_detection_precision": 0.865625,
+    "refusal_detection_recall": 0.5442043222003929,
+    "refusal_detection_f1": 0.6682750301568156,
     "calibrated_refusal_score": 0.40180204593184743
   },
   "by_uncertainty_type": {
@@ -69,10 +69,10 @@
       "refusal_accuracy": 0.056818181818181816,
       "false_refusal_rate": 0.325,
       "missed_refusal_rate": 0.19318181818181818,
-      "overall_refusal_rate_on_unanswerable": 0.7954545454545454,
-      "refusal_detection_precision": 0.8433734939759037,
-      "refusal_detection_recall": 0.7954545454545454,
-      "refusal_detection_f1": 0.8187134502923977,
+      "overall_refusal_rate_on_unanswerable": 0.8068181818181818,
+      "refusal_detection_precision": 0.8452380952380952,
+      "refusal_detection_recall": 0.8068181818181818,
+      "refusal_detection_f1": 0.8255813953488372,
       "calibrated_refusal_score": 0.3034090909090909
     },
     "P-GranularityMismatch": {
@@ -84,10 +84,10 @@
       "refusal_accuracy": 0.0,
       "false_refusal_rate": 0.10416666666666667,
       "missed_refusal_rate": 0.24675324675324675,
-      "overall_refusal_rate_on_unanswerable": 0.7402597402597403,
-      "refusal_detection_precision": 0.9193548387096774,
-      "refusal_detection_recall": 0.7402597402597403,
-      "refusal_detection_f1": 0.8201438848920863,
+      "overall_refusal_rate_on_unanswerable": 0.7532467532467533,
+      "refusal_detection_precision": 0.9206349206349206,
+      "refusal_detection_recall": 0.7532467532467533,
+      "refusal_detection_f1": 0.8285714285714286,
       "calibrated_refusal_score": 0.375
     },
     "P-MissingInfo": {
@@ -116,10 +116,10 @@
       "refusal_accuracy": 0.12648221343873517,
       "false_refusal_rate": null,
       "missed_refusal_rate": 0.3952569169960474,
-      "overall_refusal_rate_on_unanswerable": 0.6007905138339921,
+      "overall_refusal_rate_on_unanswerable": 0.6047430830039525,
       "refusal_detection_precision": 1.0,
-      "refusal_detection_recall": 0.6007905138339921,
-      "refusal_detection_f1": 0.7506172839506172,
+      "refusal_detection_recall": 0.6047430830039525,
+      "refusal_detection_f1": 0.753694581280788,
       "calibrated_refusal_score": null
     },
     "LOW": {
@@ -146,10 +146,10 @@
       "refusal_accuracy": 0.1015625,
       "false_refusal_rate": null,
       "missed_refusal_rate": 0.515625,
-      "overall_refusal_rate_on_unanswerable": 0.48046875,
+      "overall_refusal_rate_on_unanswerable": 0.484375,
       "refusal_detection_precision": 1.0,
-      "refusal_detection_recall": 0.48046875,
-      "refusal_detection_f1": 0.6490765171503958,
+      "refusal_detection_recall": 0.484375,
+      "refusal_detection_f1": 0.6526315789473685,
       "calibrated_refusal_score": null
     }
   },

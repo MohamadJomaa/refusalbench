@@ -2,6 +2,8 @@
 
 *Generated automatically. The assessment below is provisional until we review it together.*
 
+*Regenerated on 20 October 2026 from the same graded replies with the current code, which maps the judge's two mistyped refusal codes to the closest valid code; only detection F1, recall and the refusal rate on unanswerable change. The environment line is the original run's.*
+
 > **INCOMPLETE JUDGING: 790 of 1560 replies are not judged yet. Do not interpret or compare these numbers.**
 
 
@@ -49,8 +51,8 @@ memory on their batch and they were never regenerated. They are excluded from ev
 | refusal accuracy (exact category) | 0.114 |
 | false refusal rate | 0.165 |
 | missed refusal rate | 0.456 |
-| refusal rate on unanswerable (any code) | 0.540 |
-| refusal detection F1 (refuse = positive) | 0.665 |
+| refusal rate on unanswerable (any code) | 0.544 |
+| refusal detection F1 (refuse = positive) | 0.668 |
 | calibrated refusal score (0.5 x answer + 0.5 x refusal accuracy) | 0.402 |
 
 ### By uncertainty type
@@ -59,28 +61,28 @@ memory on their batch and they were never regenerated. They are excluded from ev
 | P-Ambiguity | 120 | 0.745 | 0.027 | 0.085 | 0.740 | 0.396 |
 | P-Contradiction | 132 | 0.690 | 0.044 | 0.167 | 0.711 | 0.423 |
 | P-EpistemicMismatch | 131 | 0.721 | 0.080 | 0.116 | 0.295 | 0.800 |
-| P-FalsePremise | 128 | 0.550 | 0.057 | 0.325 | 0.193 | 0.819 |
-| P-GranularityMismatch | 125 | 0.750 | 0.000 | 0.104 | 0.247 | 0.820 |
+| P-FalsePremise | 128 | 0.550 | 0.057 | 0.325 | 0.193 | 0.826 |
+| P-GranularityMismatch | 125 | 0.750 | 0.000 | 0.104 | 0.247 | 0.829 |
 | P-MissingInfo | 134 | 0.659 | 0.430 | 0.220 | 0.559 | 0.573 |
 
 ### By intensity
 | group | n | answer acc | refusal acc | false refusal | missed refusal | detection F1 |
 |---|---:|---:|---:|---:|---:|---:|
-| HIGH | 253 | n/a | 0.126 | n/a | 0.395 | 0.751 |
+| HIGH | 253 | n/a | 0.126 | n/a | 0.395 | 0.754 |
 | LOW | 261 | 0.690 | n/a | 0.165 | n/a | n/a |
-| MEDIUM | 256 | n/a | 0.102 | n/a | 0.516 | 0.649 |
+| MEDIUM | 256 | n/a | 0.102 | n/a | 0.516 | 0.653 |
 
 Confusion matrix: `confusion_matrix.csv`.
 
 ## Comparison with the paper
 | metric | paper (Qwen1.5-7B-Chat) | ours | difference | within +/-0.05 |
 |---|---:|---:|---:|---|
-| answer_accuracy | 0.561 (exact, Section 4.3 text) | 0.690 | +0.129 | no |
+| answer_accuracy | 0.561 (exact, Section 4.2 text, effect of scale) | 0.690 | +0.129 | no |
 | refusal_accuracy | 0.05 (approximate, read from the small Figure 9 plot; text says < 0.17 for all Qwen sizes) | 0.114 | +0.064 | no |
 | false_refusal_rate | not extracted from the paper | 0.165 | n/a | n/a |
 | missed_refusal_rate | not extracted from the paper | 0.456 | n/a | n/a |
 | calibrated_refusal_score | not extracted from the paper | 0.402 | n/a | n/a |
-| refusal_detection_f1 | not extracted from the paper | 0.665 | n/a | n/a |
+| refusal_detection_f1 | not extracted from the paper | 0.668 | n/a | n/a |
 
 Metrics the paper reports only in charts we did not extract are marked, not guessed.
 
@@ -91,8 +93,8 @@ judge hand check (`handcheck_sheet.csv`, 30 items to fill in) together.
 
 ## Observed failure patterns (descriptive only)
 Most common wrong refusal categories:
-- expected `REFUSE_FALSE_PREMISE_IN_QUERY` but got `REFUSE_INFO_MISSING_IN_CONTEXT`: 64 times
+- expected `REFUSE_FALSE_PREMISE_IN_QUERY` but got `REFUSE_INFO_MISSING_IN_CONTEXT`: 65 times
 - expected `REFUSE_CONTRADICTORY_CONTEXT` but got `answer_attempt`: 64 times
-- expected `REFUSE_GRANULARITY_MISMATCH` but got `REFUSE_INFO_MISSING_IN_CONTEXT`: 56 times
+- expected `REFUSE_GRANULARITY_MISMATCH` but got `REFUSE_INFO_MISSING_IN_CONTEXT`: 57 times
 - expected `REFUSE_AMBIGUOUS_QUERY` but got `answer_attempt`: 54 times
 - expected `REFUSE_INFO_MISSING_IN_CONTEXT` but got `answer_attempt`: 52 times

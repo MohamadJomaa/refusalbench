@@ -29,5 +29,8 @@ def test_reported_baseline_numbers_recompute_from_the_data():
     assert m["refusal_accuracy"] == pytest.approx(0.114, abs=5e-4)
     assert m["false_refusal_rate"] == pytest.approx(0.165, abs=5e-4)
     assert m["missed_refusal_rate"] == pytest.approx(0.456, abs=5e-4)
-    committed = json.loads((ROOT / "baseline" / "results" / "metrics.json").read_text(encoding="utf-8"))
-    assert committed["overall"]["answer_accuracy"] == pytest.approx(m["answer_accuracy"])
+    assert m["refusal_detection_f1"] == pytest.approx(0.668, abs=5e-4)
+    # every number in the committed metrics.json must equal a recomputation, not only the headline ones
+    committed = json.loads((ROOT / "baseline" / "results" / "metrics.json").read_text(encoding="utf-8"))["overall"]
+    for key, value in m.items():
+        assert committed[key] == pytest.approx(value), key
