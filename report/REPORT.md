@@ -259,7 +259,7 @@ By type, the baseline misses most refusals for **ambiguity (0.74)** and **contra
 false premise (0.19), granularity (0.25) and epistemic mismatch (0.30), and over-refuses answerable
 false-premise examples (false refusal 0.33).
 
-Only 528 of the 1,560 replies (34%) are a clean refusal code. The other 1,032 (64%) are free text (991),
+Only 528 of the 1,560 replies (34%) are a clean refusal code. The other 1,032 (66%) are free text (991),
 an unknown code (40, mostly a truncated `REFUSE_INFO_MISSING_IN`) or several codes (1), and need the
 judge. A reply without a code is never assumed to be an answer, because a small model often refuses in
 plain words.
