@@ -1,7 +1,9 @@
 # Reading, Not Asking: extending RefusalBench
 
 **Team:** Mohammad Jomaa (@MohamadJomaa), Abbass Zahreddine (@abbass19), Ahmad Assaf (@ahmaassaf12)
+
 **Topic:** Grounding.
+
 **Baseline paper:** Aashiq Muhamed, Leonardo F. R. Ribeiro, Markus Dreyer, Virginia Smith, Mona T. Diab.
 *RefusalBench: Generative Evaluation of Selective Refusal in Grounded Language Models.* Proceedings of
 the 19th Conference of the European Chapter of the Association for Computational Linguistics (EACL 2026),
